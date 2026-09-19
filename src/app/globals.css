@@ -3,49 +3,73 @@
 @tailwind utilities;
 
 :root {
-  --background: #070a12;
-  --foreground: #f8fafc;
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  overflow-x: hidden;
+  font-family: var(--font-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* 21st.dev & Magic UI style background patterns */
-.bg-grid-pattern {
+/* Dark Mode Background Grid */
+.dark-grid-pattern {
   background-size: 40px 40px;
   background-image: 
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-.bg-radial-glow {
-  background: radial-gradient(circle 800px at 50% -100px, rgba(99, 102, 241, 0.18), transparent);
+/* Light Mode Background Grid */
+.light-grid-pattern {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
 }
 
-/* Premium 21st.dev Glassmorphism Cards */
-.bento-card {
-  background: rgba(13, 18, 30, 0.65);
+/* 21st.dev Dark Bento Card */
+.dark .bento-card {
+  background: rgba(13, 18, 30, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #f8fafc;
 }
 
-.bento-card:hover {
-  background: rgba(18, 24, 40, 0.85);
+.dark .bento-card:hover {
+  background: rgba(18, 25, 42, 0.9);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 25px 60px rgba(99, 102, 241, 0.15);
+}
+
+/* 21st.dev Light Bento Card */
+.light .bento-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  color: #0f172a;
+}
+
+.light .bento-card:hover {
+  background: #ffffff;
   border-color: rgba(99, 102, 241, 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 25px 60px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 20px 45px rgba(99, 102, 241, 0.1);
 }
 
-/* Shimmer Border */
-.shimmer-badge {
+/* Shimmer Badges */
+.shimmer-badge-dark {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(99, 102, 241, 0.25) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 4s infinite linear;
+}
+
+.shimmer-badge-light {
+  background: linear-gradient(90deg, rgba(238, 242, 255, 0.8) 0%, rgba(199, 210, 254, 0.9) 50%, rgba(238, 242, 255, 0.8) 100%);
   background-size: 200% 100%;
   animation: shimmer 4s infinite linear;
 }
@@ -61,12 +85,9 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #070a12;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #334155;
   border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
 }

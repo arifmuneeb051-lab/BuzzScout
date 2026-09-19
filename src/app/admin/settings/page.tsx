@@ -12,6 +12,10 @@ export default function AdminSettingsPage() {
     monthlyPrice: 9,
     ltdPrice: 39,
     agencyPrice: 79,
+    stripeSecretKey: "",
+    stripePublishableKey: "",
+    stripePaymentLink: "",
+    paymentMode: "TEST",
   });
 
   const [loading, setLoading] = useState(true);
@@ -31,6 +35,10 @@ export default function AdminSettingsPage() {
           monthlyPrice: data.config.monthlyPrice,
           ltdPrice: data.config.ltdPrice,
           agencyPrice: data.config.agencyPrice || 79,
+          stripeSecretKey: data.config.stripeSecretKey || "",
+          stripePublishableKey: data.config.stripePublishableKey || "",
+          stripePaymentLink: data.config.stripePaymentLink || "",
+          paymentMode: data.config.paymentMode || "TEST",
         });
       }
     } catch {
@@ -204,6 +212,79 @@ export default function AdminSettingsPage() {
                 value={formData.agencyPrice}
                 onChange={(e) => setFormData({ ...formData, agencyPrice: Number(e.target.value) })}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm font-bold text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Gateway & Stripe Owner Configuration */}
+        <div className="p-6 rounded-3xl bg-[#0b0f19]/90 border border-white/10 space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Stripe & Payment Gateway Settings (Owner Bank Routing)
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                All customer subscription & LTD payments will be routed directly to the Stripe account configured below.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+              Direct Settlement
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Payment Mode
+              </label>
+              <select
+                value={formData.paymentMode || "TEST"}
+                onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+              >
+                <option value="TEST">🧪 Test Mode (Simulated / Stripe Test)</option>
+                <option value="LIVE">🚀 Live Mode (Real Card Processing)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Stripe Direct Payment Link (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="https://buy.stripe.com/..."
+                value={formData.stripePaymentLink || ""}
+                onChange={(e) => setFormData({ ...formData, stripePaymentLink: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Stripe Secret Key (sk_live_... or sk_test_...)
+              </label>
+              <input
+                type="password"
+                placeholder="sk_test_51..."
+                value={formData.stripeSecretKey || ""}
+                onChange={(e) => setFormData({ ...formData, stripeSecretKey: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Stripe Publishable Key (pk_live_... or pk_test_...)
+              </label>
+              <input
+                type="text"
+                placeholder="pk_test_51..."
+                value={formData.stripePublishableKey || ""}
+                onChange={(e) => setFormData({ ...formData, stripePublishableKey: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>

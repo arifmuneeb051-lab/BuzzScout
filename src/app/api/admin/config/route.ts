@@ -27,7 +27,20 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { heroHeadline, heroSubtitle, announcementText, trialDays, monthlyPrice, ltdPrice, agencyPrice } = body;
+    const {
+      heroHeadline,
+      heroSubtitle,
+      announcementText,
+      trialDays,
+      monthlyPrice,
+      ltdPrice,
+      agencyPrice,
+      stripeSecretKey,
+      stripePublishableKey,
+      stripePaymentLink,
+      stripeWebhookSecret,
+      paymentMode,
+    } = body;
 
     const updated = await prisma.siteConfig.upsert({
       where: { id: "default" },
@@ -39,6 +52,11 @@ export async function POST(req: Request) {
         ...(monthlyPrice !== undefined ? { monthlyPrice: Number(monthlyPrice) } : {}),
         ...(ltdPrice !== undefined ? { ltdPrice: Number(ltdPrice) } : {}),
         ...(agencyPrice !== undefined ? { agencyPrice: Number(agencyPrice) } : {}),
+        ...(stripeSecretKey !== undefined ? { stripeSecretKey } : {}),
+        ...(stripePublishableKey !== undefined ? { stripePublishableKey } : {}),
+        ...(stripePaymentLink !== undefined ? { stripePaymentLink } : {}),
+        ...(stripeWebhookSecret !== undefined ? { stripeWebhookSecret } : {}),
+        ...(paymentMode !== undefined ? { paymentMode } : {}),
       },
       create: {
         id: "default",
@@ -49,6 +67,11 @@ export async function POST(req: Request) {
         monthlyPrice: Number(monthlyPrice) || 9,
         ltdPrice: Number(ltdPrice) || 39,
         agencyPrice: Number(agencyPrice) || 79,
+        stripeSecretKey: stripeSecretKey || null,
+        stripePublishableKey: stripePublishableKey || null,
+        stripePaymentLink: stripePaymentLink || null,
+        stripeWebhookSecret: stripeWebhookSecret || null,
+        paymentMode: paymentMode || "TEST",
       },
     });
 

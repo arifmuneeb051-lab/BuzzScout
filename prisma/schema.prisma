@@ -92,13 +92,33 @@ model LicenseKey {
 }
 
 model SiteConfig {
-  id               String   @id @default("default")
-  heroHeadline     String   @default("Turn Reddit & X Conversations Into Paying Customers on Autopilot.")
-  heroSubtitle     String   @default("Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.")
-  announcementText String   @default("Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access")
-  trialDays        Int      @default(7)
-  monthlyPrice     Int      @default(9)
-  ltdPrice         Int      @default(39)
-  agencyPrice      Int      @default(79)
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default("default")
+  heroHeadline          String   @default("Turn Reddit & X Conversations Into Paying Customers on Autopilot.")
+  heroSubtitle          String   @default("Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.")
+  announcementText      String   @default("Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access")
+  trialDays             Int      @default(7)
+  monthlyPrice          Int      @default(9)
+  ltdPrice              Int      @default(39)
+  agencyPrice           Int      @default(79)
+  stripeSecretKey       String?
+  stripePublishableKey  String?
+  stripePaymentLink     String?
+  stripeWebhookSecret   String?
+  paymentMode           String   @default("TEST") // LIVE, TEST
+  updatedAt             DateTime @updatedAt
 }
+
+model PaymentTransaction {
+  id              String   @id @default(cuid())
+  userId          String?
+  userEmail       String
+  amount          Float
+  currency        String   @default("usd")
+  plan            String   // PRO, LTD, AGENCY
+  status          String   @default("COMPLETED") // COMPLETED, PENDING, FAILED
+  paymentMethod   String   @default("CARD") // STRIPE, CARD
+  stripeSessionId String?
+  cardLast4       String?
+  createdAt       DateTime @default(now())
+}
+

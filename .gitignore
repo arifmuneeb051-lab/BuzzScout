@@ -15,7 +15,6 @@ out/
 .env.production.local
 
 # Database
-prisma/*.db
 prisma/*.db-journal
 
 # Logs

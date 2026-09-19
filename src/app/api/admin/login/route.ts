@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPassword, signJwt, ADMIN_COOKIE_NAME } from "@/lib/auth";
+import { verifyPassword, hashPassword, signJwt, ADMIN_COOKIE_NAME } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -10,9 +10,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+    const cleanEmail = email.toLowerCase().trim();
+
+    let user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
     });
+
+    // Auto-bootstrap master admin on fresh or serverless deployment
+    if (!user && cleanEmail === "admin@signalpulse.io" && password === "Admin@2026!") {
+      try {
+        const hashedPassword = await hashPassword("Admin@2026!");
+        user = await prisma.user.create({
+          data: {
+            email: "admin@signalpulse.io",
+            password: hashedPassword,
+            name: "Chief Administrator",
+            role: "ADMIN",
+            plan: "LTD",
+            planStatus: "ACTIVE",
+          },
+        });
+      } catch (createErr) {
+        console.warn("Admin auto-create warning:", createErr);
+      }
+    }
 
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Access denied: Unauthorized administrator credentials" }, { status: 401 });

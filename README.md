@@ -57,7 +57,7 @@
 ### 2. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/signalpulse-saas.git
+git clone https://github.com/arifmuneeb051-lab/signalpulse-saas.git
 cd signalpulse-saas
 
 # Install dependencies

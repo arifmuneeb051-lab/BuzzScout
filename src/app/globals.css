@@ -13,63 +13,98 @@ body {
 
 /* Dark Mode Background Grid */
 .dark-grid-pattern {
-  background-size: 40px 40px;
+  background-size: 44px 44px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
-/* Light Mode Background Grid */
+/* Light Mode Background Grid - Subtle, elegant, high quality */
 .light-grid-pattern {
-  background-size: 40px 40px;
+  background-size: 44px 44px;
   background-image: 
-    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgba(99, 102, 241, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.07) 1px, transparent 1px);
 }
 
-/* 21st.dev Dark Bento Card */
+/* =========================================================
+   21st.dev BENTO & FLASH CARDS (DUAL THEME)
+   ========================================================= */
+
+/* Dark Mode Bento Glass Card */
 .dark .bento-card {
-  background: rgba(13, 18, 30, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(13, 18, 30, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: #f8fafc;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .bento-card:hover {
-  background: rgba(18, 25, 42, 0.9);
-  border-color: rgba(99, 102, 241, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 25px 60px rgba(99, 102, 241, 0.15);
+  background: rgba(18, 25, 42, 0.95);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 25px 60px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* 21st.dev Light Bento Card */
+/* Light Mode Bento Glass Card — Frosted Alabaster & Crystalline Glass */
 .light .bento-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 
+    0 10px 30px -4px rgba(99, 102, 241, 0.08),
+    0 4px 12px -2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
   color: #0f172a;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .light .bento-card:hover {
   background: #ffffff;
-  border-color: rgba(99, 102, 241, 0.35);
-  transform: translateY(-2px);
-  box-shadow: 0 20px 45px rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 
+    0 24px 50px -4px rgba(99, 102, 241, 0.18),
+    0 8px 20px -2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* Antique Flash Card Glow Effect */
+.flash-card-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.flash-card-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #6366f1, #a855f7, #ec4899, transparent);
+  animation: borderSweep 5s ease-in-out infinite;
+}
+
+@keyframes borderSweep {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
 }
 
 /* Shimmer Badges */
 .shimmer-badge-dark {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(99, 102, 241, 0.25) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(99, 102, 241, 0.3) 50%, rgba(255, 255, 255, 0.04) 100%);
   background-size: 200% 100%;
   animation: shimmer 4s infinite linear;
 }
 
 .shimmer-badge-light {
-  background: linear-gradient(90deg, rgba(238, 242, 255, 0.8) 0%, rgba(199, 210, 254, 0.9) 50%, rgba(238, 242, 255, 0.8) 100%);
+  background: linear-gradient(90deg, rgba(238, 242, 255, 0.9) 0%, rgba(199, 210, 254, 0.95) 50%, rgba(238, 242, 255, 0.9) 100%);
   background-size: 200% 100%;
   animation: shimmer 4s infinite linear;
 }
@@ -77,6 +112,21 @@ body {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Radar Sweep Animation */
+@keyframes radarSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radarSpin 4s linear infinite;
+  transform-origin: center center;
 }
 
 /* Custom scrollbar */
@@ -88,6 +138,6 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #64748b;
   border-radius: 9999px;
 }

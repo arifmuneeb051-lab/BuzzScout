@@ -5,11 +5,13 @@ import { prisma } from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "signalpulse-jwt-fallback-secret-2026";
 const COOKIE_NAME = "signalpulse_session";
+const ADMIN_COOKIE_NAME = "signalpulse_admin_session";
 
 export interface SessionPayload {
   userId: string;
   email: string;
   plan: string;
+  role?: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -49,6 +51,7 @@ export async function getCurrentUser() {
         id: true,
         email: true,
         name: true,
+        role: true,
         productName: true,
         productUrl: true,
         productPitch: true,
@@ -65,4 +68,38 @@ export async function getCurrentUser() {
   }
 }
 
-export { COOKIE_NAME };
+export async function getAdminUser() {
+  try {
+    const cookieStore = await cookies();
+    // Check either admin dedicated cookie or main session cookie
+    const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value || cookieStore.get(COOKIE_NAME)?.value;
+
+    if (!token) return null;
+
+    const payload = verifyJwt(token);
+    if (!payload?.userId) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        plan: true,
+        planStatus: true,
+        createdAt: true,
+      },
+    });
+
+    if (user && user.role === "ADMIN") {
+      return user;
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to verify admin user:", err);
+    return null;
+  }
+}
+
+export { COOKIE_NAME, ADMIN_COOKIE_NAME };

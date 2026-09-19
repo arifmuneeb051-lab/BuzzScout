@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Radar,
@@ -20,8 +20,20 @@ import {
   Moon,
   Copy,
   Clock,
+  ExternalLink,
   Coins,
+  TrendingUp,
 } from "lucide-react";
+
+interface SiteConfigData {
+  heroHeadline: string;
+  heroSubtitle: string;
+  announcementText: string;
+  trialDays: number;
+  monthlyPrice: number;
+  ltdPrice: number;
+  agencyPrice: number;
+}
 
 export default function LandingPage() {
   // Theme state: "dark" | "light"
@@ -32,9 +44,39 @@ export default function LandingPage() {
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
-  // Dynamic ROI Calculator state
+  // Dynamic Site Config from Admin Portal
+  const [siteConfig, setSiteConfig] = useState<SiteConfigData>({
+    heroHeadline: "Turn Reddit & X Conversations Into Paying Customers on Autopilot.",
+    heroSubtitle: "Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.",
+    announcementText: "Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access",
+    trialDays: 7,
+    monthlyPrice: 9,
+    ltdPrice: 39,
+    agencyPrice: 79,
+  });
+
+  // Dynamic Profit Calculator state
   const [productPrice, setProductPrice] = useState(39);
   const [monthlyLeadsEstimate, setMonthlyLeadsEstimate] = useState(8);
+
+  useEffect(() => {
+    fetch("/api/site-config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.heroHeadline) {
+          setSiteConfig({
+            heroHeadline: data.heroHeadline,
+            heroSubtitle: data.heroSubtitle,
+            announcementText: data.announcementText,
+            trialDays: data.trialDays || 7,
+            monthlyPrice: data.monthlyPrice || 9,
+            ltdPrice: data.ltdPrice || 39,
+            agencyPrice: data.agencyPrice || 79,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
@@ -55,8 +97,8 @@ export default function LandingPage() {
 
   const faqs = [
     {
-      q: "How does the 7-Day Free Trial work?",
-      a: "You get full, unrestricted access to all features (Reddit & X scanning, instant Telegram/Discord alerts, and AI pitch drafting) for 7 days with zero credit card required. After 7 days, you can choose to continue with our $9/month plan or grab the $39 Lifetime Deal.",
+      q: `How does the ${siteConfig.trialDays}-Day Free Trial work?`,
+      a: `You get full, unrestricted access to all features (Reddit & X scanning, instant Telegram/Discord alerts, and AI pitch drafting) for ${siteConfig.trialDays} days with zero credit card required. After ${siteConfig.trialDays} days, you can choose to continue with our $${siteConfig.monthlyPrice}/month plan or grab the $${siteConfig.ltdPrice} Lifetime Deal.`,
     },
     {
       q: "Do I need to pay for expensive Reddit or Twitter API access?",
@@ -71,8 +113,8 @@ export default function LandingPage() {
       a: "No, because SignalPulse never uses automated spam bots to post replies. Instead, it alerts you privately and drafts a high-value, authentic reply that you can review, copy, and post organically from your own personal account.",
     },
     {
-      q: "How does the $39 Lifetime Deal (LTD) work?",
-      a: "You make a single one-time payment of $39 and receive a permanent Lifetime License code. You get unlimited access to all features with zero recurring monthly subscription fees forever.",
+      q: `How does the $${siteConfig.ltdPrice} Lifetime Deal (LTD) work?`,
+      a: `You make a single one-time payment of $${siteConfig.ltdPrice} and receive a permanent Lifetime License code. You get unlimited access to all features with zero recurring monthly subscription fees forever.`,
     },
   ];
 
@@ -84,7 +126,7 @@ export default function LandingPage() {
           : "light bg-[#f8fafc] text-slate-900 light-grid-pattern"
       } selection:bg-indigo-500/30 selection:text-indigo-200 relative`}
     >
-      {/* Ambient Radial Beams & Glows */}
+      {/* Ambient Lighting & Beams */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {theme === "dark" ? (
           <>
@@ -100,18 +142,17 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* Floating Glassmorphic Header (Radar v2.4 removed!) */}
+      {/* Floating Glassmorphic Header */}
       <header
         className={`sticky top-0 z-50 backdrop-blur-2xl border-b transition-colors ${
           theme === "dark"
-            ? "bg-[#070a12]/80 border-white/[0.08]"
-            : "bg-white/80 border-slate-200/80 shadow-sm"
+            ? "bg-[#070a12]/85 border-white/[0.08]"
+            : "bg-white/85 border-slate-200/80 shadow-sm"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo & Clean Title (No 'Radar v2.4', No 'SaaS') */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-300">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-300">
               <Radar className="w-5 h-5 text-white animate-pulse" />
             </div>
             <span
@@ -137,9 +178,8 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-indigo-500 transition-colors">FAQ</a>
           </nav>
 
-          {/* Actions: Theme Toggle + Auth Links */}
+          {/* Actions: Theme Toggle + Auth */}
           <div className="flex items-center space-x-3">
-            {/* Instant Dark / Light Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle Theme"
@@ -184,9 +224,9 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section (Dynamically powered by SiteConfig CMS) */}
       <section className="relative z-10 pt-16 pb-20 md:pt-24 md:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Shimmer Pill Badge */}
+        {/* Dynamic Shimmer Announcement Bar */}
         <div
           className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs sm:text-sm font-medium mb-8 shadow-xl ${
             theme === "dark"
@@ -195,38 +235,32 @@ export default function LandingPage() {
           }`}
         >
           <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-          <span>Stop paying \$100+/month for legacy enterprise monitors</span>
+          <span>{siteConfig.announcementText}</span>
           <span
             className={`font-bold underline underline-offset-2 ml-1 ${
               theme === "dark" ? "text-white" : "text-indigo-950"
             }`}
           >
-            Claim \$39 Lifetime Access &rarr;
+            Claim \${siteConfig.ltdPrice} Lifetime Deal &rarr;
           </span>
         </div>
 
-        {/* Hero Title */}
+        {/* Dynamic Hero Title */}
         <h1
           className={`text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-5xl mx-auto leading-[1.12] ${
             theme === "dark" ? "text-white" : "text-slate-950"
           }`}
         >
-          Turn Reddit & X Conversations Into{" "}
-          <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Paying Customers
-          </span>{" "}
-          on Autopilot.
+          {siteConfig.heroHeadline}
         </h1>
 
-        {/* Hero Subtitle */}
+        {/* Dynamic Hero Subtitle */}
         <p
           className={`mt-6 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed ${
             theme === "dark" ? "text-slate-400" : "text-slate-600"
           }`}
         >
-          Monitor high-intent phrases like{" "}
-          <span className="text-indigo-500 font-semibold">"looking for alternative to X"</span> or{" "}
-          <span className="text-indigo-500 font-semibold">"recommend tool for Y"</span>. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.
+          {siteConfig.heroSubtitle}
         </p>
 
         {/* Hero CTA Buttons */}
@@ -235,7 +269,7 @@ export default function LandingPage() {
             href="/register"
             className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all duration-200 flex items-center justify-center gap-2 group"
           >
-            <span>Start 7-Day Free Trial</span>
+            <span>Start {siteConfig.trialDays}-Day Free Trial</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
@@ -251,7 +285,7 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* Trust Points */}
+        {/* Trust Badges */}
         <div
           className={`mt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm font-medium ${
             theme === "dark" ? "text-slate-400" : "text-slate-600"
@@ -259,7 +293,7 @@ export default function LandingPage() {
         >
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>7-Day Full Access Trial</span>
+            <span>{siteConfig.trialDays}-Day Full Access Trial</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -271,7 +305,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Live Interactive Simulator Card */}
+        {/* Interactive Live Radar Simulator Card */}
         <div className="mt-14 max-w-4xl mx-auto rounded-3xl p-1 bg-gradient-to-b from-indigo-500/30 via-purple-500/15 to-transparent border border-indigo-500/20 shadow-2xl">
           <div
             className={`rounded-[22px] p-5 sm:p-7 text-left space-y-4 ${
@@ -288,7 +322,7 @@ export default function LandingPage() {
                     theme === "dark" ? "text-slate-400" : "text-slate-500"
                   }`}
                 >
-                  Live Social Radar Simulator
+                  Live Intent Radar Simulator
                 </span>
               </div>
               <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 font-bold">
@@ -297,7 +331,7 @@ export default function LandingPage() {
               </span>
             </div>
 
-            {/* Keyword Input preview */}
+            {/* Keyword Input */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -323,7 +357,7 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Simulated Live Lead Card */}
+            {/* Live Lead Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div
                 className={`p-4 rounded-2xl border space-y-3 ${
@@ -360,7 +394,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Instant Alert Ping */}
+              {/* Simulated Telegram Notification */}
               <div
                 className={`p-4 rounded-2xl border space-y-3 shadow-lg ${
                   theme === "dark"
@@ -413,7 +447,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Bento Grid Features Section (21st.dev Style Architecture) */}
+      {/* 21st.dev Bento Grid Features */}
       <section id="bento" className="relative z-10 py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-500">Next-Gen Architecture</h2>
@@ -430,7 +464,7 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Bento Item 1 */}
+          {/* Bento 1 */}
           <div className="md:col-span-2 bento-card rounded-3xl p-8 space-y-5">
             <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
               <Zap className="w-6 h-6" />
@@ -462,7 +496,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Bento Item 2 */}
+          {/* Bento 2 */}
           <div className="bento-card rounded-3xl p-8 space-y-5">
             <div className="h-12 w-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
               <Sparkles className="w-6 h-6" />
@@ -488,7 +522,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Bento Item 3 */}
+          {/* Bento 3 */}
           <div className="bento-card rounded-3xl p-8 space-y-5">
             <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
               <Filter className="w-6 h-6" />
@@ -509,7 +543,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Bento Item 4 */}
+          {/* Bento 4 */}
           <div className="md:col-span-2 bento-card rounded-3xl p-8 space-y-5">
             <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
               <ShieldCheck className="w-6 h-6" />
@@ -543,7 +577,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Dynamic Interactive ROI Calculator Section */}
+      {/* Dynamic Interactive ROI Calculator */}
       <section id="roi" className="relative z-10 py-20 border-t border-slate-200 dark:border-white/5">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
           <div>
@@ -556,7 +590,7 @@ export default function LandingPage() {
               Calculate Your Return on Investment
             </h3>
             <p className={`mt-2 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-              See how many deals you need to close to 10x your SignalPulse investment.
+              See how many deals you need to close to 10x your investment.
             </p>
           </div>
 
@@ -631,7 +665,7 @@ export default function LandingPage() {
                 href="/register"
                 className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all whitespace-nowrap"
               >
-                Start 7-Day Free Trial &rarr;
+                Start {siteConfig.trialDays}-Day Free Trial &rarr;
               </Link>
             </div>
           </div>
@@ -685,7 +719,7 @@ export default function LandingPage() {
                         : "text-emerald-600 bg-indigo-50 border-indigo-200"
                     }`}
                   >
-                    7-Day Free Trial, then \$9/mo or \$39 LTD
+                    {siteConfig.trialDays}-Day Trial, then \${siteConfig.monthlyPrice}/mo or \${siteConfig.ltdPrice} LTD
                   </td>
                 </tr>
                 <tr>
@@ -742,7 +776,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section (With 7-Day Free Trial!) */}
+      {/* Pricing Section (Dynamic from SiteConfig) */}
       <section id="pricing" className="relative z-10 py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-500">Sweet-Spot Pricing</h2>
         <h3
@@ -753,7 +787,7 @@ export default function LandingPage() {
           Affordable Access for Solo Founders
         </h3>
         <p className={`mt-3 max-w-2xl mx-auto text-sm sm:text-base ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-          Start with our 7-day unrestricted trial, then pay once or subscribe with flat transparent pricing.
+          Start with our {siteConfig.trialDays}-day unrestricted trial, then pay once or subscribe with flat transparent pricing.
         </p>
 
         {/* Pricing Toggle */}
@@ -772,7 +806,7 @@ export default function LandingPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Monthly (\$9/mo)
+            Monthly (\${siteConfig.monthlyPrice}/mo)
           </button>
           <button
             onClick={() => setBillingCycle("ltd")}
@@ -784,35 +818,35 @@ export default function LandingPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <span>Lifetime Deal (\$39 LTD)</span>
+            <span>Lifetime Deal (\${siteConfig.ltdPrice} LTD)</span>
             <span className="text-[10px] bg-emerald-500 text-slate-950 font-extrabold px-2 py-0.5 rounded-full">
               BEST VALUE
             </span>
           </button>
         </div>
 
-        {/* Pricing Cards (Updated with 7-Day Free Trial!) */}
+        {/* Pricing Cards */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto text-left">
-          {/* Card 1: 7-Day Free Trial */}
+          {/* Card 1: Free Trial */}
           <div className="bento-card rounded-3xl p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
                 <Clock className="w-3.5 h-3.5" />
-                <span>7-Day Free Trial</span>
+                <span>{siteConfig.trialDays}-Day Free Trial</span>
               </div>
               <div>
                 <h4 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-slate-900"}`}>
-                  7-Day Full Access
+                  {siteConfig.trialDays}-Day Full Access
                 </h4>
                 <p className={`text-xs mt-1 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
-                  Full radar access for 7 days. No credit card required.
+                  Full radar access for {siteConfig.trialDays} days. No credit card required.
                 </p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className={`text-4xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-900"}`}>
                     \$0
                   </span>
                   <span className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
-                    / for 7 days
+                    / for {siteConfig.trialDays} days
                   </span>
                 </div>
               </div>
@@ -831,7 +865,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Upgrade anytime after 7 days</span>
+                  <span>Upgrade anytime after {siteConfig.trialDays} days</span>
                 </li>
               </ul>
             </div>
@@ -843,11 +877,11 @@ export default function LandingPage() {
                   : "bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300"
               }`}
             >
-              Start 7-Day Trial
+              Start {siteConfig.trialDays}-Day Trial
             </Link>
           </div>
 
-          {/* Card 2: Pro / LTD Founder Pass (Hero Tier) */}
+          {/* Card 2: Pro / LTD Pass */}
           <div className="relative rounded-3xl p-8 bg-gradient-to-b from-[#18243e] to-[#0f172a] border-2 border-indigo-500 text-white shadow-2xl shadow-indigo-600/30 space-y-6 md:-translate-y-3 flex flex-col justify-between">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500 text-white text-[11px] font-extrabold uppercase tracking-wide shadow-md">
@@ -862,7 +896,7 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-5xl font-extrabold text-white">
-                    {billingCycle === "ltd" ? "\$39" : "\$9"}
+                    {billingCycle === "ltd" ? `\$${siteConfig.ltdPrice}` : `\$${siteConfig.monthlyPrice}`}
                   </span>
                   <span className="text-xs text-slate-300 font-medium">
                     {billingCycle === "ltd" ? "one-time payment" : "/ month"}
@@ -900,11 +934,11 @@ export default function LandingPage() {
               href="/login"
               className="w-full block text-center py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/40 transition-colors"
             >
-              {billingCycle === "ltd" ? "Claim \$39 Lifetime Access" : "Subscribe for \$9/Month"}
+              {billingCycle === "ltd" ? `Claim \$${siteConfig.ltdPrice} Lifetime Access` : `Subscribe for \$${siteConfig.monthlyPrice}/Month`}
             </Link>
           </div>
 
-          {/* Card 3: Agency & Power Pass */}
+          {/* Card 3: Agency & Power */}
           <div className="bento-card rounded-3xl p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-500 border border-purple-500/20">
@@ -919,7 +953,7 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className={`text-4xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-900"}`}>
-                    \$79
+                    \${siteConfig.agencyPrice}
                   </span>
                   <span className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
                     / lifetime
@@ -999,7 +1033,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer (with link to Admin Gateway) */}
       <footer
         className={`relative z-10 border-t py-12 text-center text-xs ${
           theme === "dark"
@@ -1015,10 +1049,12 @@ export default function LandingPage() {
             </span>
             <span>© 2026. Built for Indie Makers & Founders.</span>
           </div>
-          <div className="flex space-x-6">
-            <Link href="/login" className="hover:text-indigo-500 transition-colors">Dashboard</Link>
+          <div className="flex items-center space-x-6">
+            <Link href="/login" className="hover:text-indigo-500 transition-colors">Client App</Link>
             <a href="#pricing" className="hover:text-indigo-500 transition-colors">Pricing</a>
-            <a href="#comparison" className="hover:text-indigo-500 transition-colors">Compare</a>
+            <Link href="/admin/login" className="hover:text-amber-400 transition-colors font-mono">
+              Staff Gateway &rarr;
+            </Link>
           </div>
         </div>
       </footer>

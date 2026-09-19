@@ -4,19 +4,46 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding SignalPulse database...");
+  console.log("🌱 Seeding SignalPulse database with Admin, Demo User, and SiteConfig...");
 
-  // 1. Create Demo Founder User
+  // 1. Create Dedicated Administrator Account
+  const adminEmail = "admin@signalpulse.io";
+  const adminHashedPassword = await bcrypt.hash("Admin@2026!", 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      role: "ADMIN",
+      password: adminHashedPassword,
+    },
+    create: {
+      email: adminEmail,
+      password: adminHashedPassword,
+      name: "Chief Administrator",
+      role: "ADMIN",
+      productName: "SignalPulse Control",
+      productUrl: "https://signalpulse.io",
+      productPitch: "Master system administrator account with full company data oversight.",
+      plan: "LTD",
+      planStatus: "ACTIVE",
+    },
+  });
+  console.log(`🛡️ Admin created: ${admin.email} (Password: Admin@2026!)`);
+
+  // 2. Create Demo Founder User
   const demoEmail = "demo@signalpulse.io";
-  const hashedPassword = await bcrypt.hash("password123", 10);
+  const demoHashedPassword = await bcrypt.hash("password123", 10);
 
   const user = await prisma.user.upsert({
     where: { email: demoEmail },
-    update: {},
+    update: {
+      role: "USER",
+    },
     create: {
       email: demoEmail,
-      password: hashedPassword,
+      password: demoHashedPassword,
       name: "Muneeb (Founder)",
+      role: "USER",
       productName: "SignalPulse",
       productUrl: "https://signalpulse.io",
       productPitch: "A lightweight, $9/mo social listening radar for solo founders to capture Reddit & X buyer leads before competitors.",
@@ -24,16 +51,32 @@ async function main() {
       planStatus: "ACTIVE",
     },
   });
+  console.log(`👤 Demo User created: ${user.email}`);
 
-  console.log(`👤 Created user: ${user.email}`);
+  // 3. Create or update dynamic SiteConfig (CMS configuration)
+  await prisma.siteConfig.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      heroHeadline: "Turn Reddit & X Conversations Into Paying Customers on Autopilot.",
+      heroSubtitle: "Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.",
+      announcementText: "Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access",
+      trialDays: 7,
+      monthlyPrice: 9,
+      ltdPrice: 39,
+      agencyPrice: 79,
+    },
+  });
+  console.log("⚙️ Default SiteConfig initialized.");
 
-  // 2. Create Seed Keywords
+  // 4. Create Seed Keywords
   const keywordsData = [
     {
       phrase: "alternative to brand24",
       platform: "ALL",
       negativeKeywords: "free, crack, pirate, hiring",
-      targetSubreddits: "SaaS, startups, Entrepreneur",
+      targetSubreddits: "startups, Entrepreneur, marketing",
     },
     {
       phrase: "recommend tool for social listening",
@@ -49,73 +92,51 @@ async function main() {
   ];
 
   for (const kw of keywordsData) {
-    const createdKw = await prisma.keyword.create({
-      data: {
-        userId: user.id,
-        phrase: kw.phrase,
-        platform: kw.platform,
-        negativeKeywords: kw.negativeKeywords,
-        targetSubreddits: kw.targetSubreddits,
-        active: true,
-      },
+    const existing = await prisma.keyword.findFirst({
+      where: { userId: user.id, phrase: kw.phrase },
     });
 
-    // 3. Create Sample High-Intent Leads for each keyword
+    const createdKw =
+      existing ||
+      (await prisma.keyword.create({
+        data: {
+          userId: user.id,
+          phrase: kw.phrase,
+          platform: kw.platform,
+          negativeKeywords: kw.negativeKeywords,
+          targetSubreddits: kw.targetSubreddits,
+          active: true,
+        },
+      }));
+
     if (kw.phrase === "alternative to brand24") {
-      await prisma.lead.createMany({
-        data: [
-          {
+      await prisma.lead.upsert({
+        where: {
+          userId_externalId: {
             userId: user.id,
-            keywordId: createdKw.id,
-            platform: "REDDIT",
             externalId: "rd-sample-101",
-            title: "Anyone know a solid, cheaper alternative to Brand24? $149/mo is insane for an early-stage startup.",
-            content: "We just launched our micro-SaaS and want to monitor Reddit/Twitter mentions of our niche keywords. Brand24 and Mention both want over $100/month with annual commitments. Any affordable indie-friendly alternatives that send alerts to Telegram or Discord?",
-            author: "dev_marcus",
-            url: "https://reddit.com/r/SaaS/comments/sample101",
-            sourceSubreddit: "SaaS",
-            intentScore: "HIGH",
-            status: "NEW",
-            pitchDraft: "Hey Marcus! Solo founder here. We ran into this exact problem — enterprise tools charging $150/mo for bloated charts. Built SignalPulse (https://signalpulse.io) to do exactly this for $9/mo. It pings your Telegram within 60s of a post going live. Happy to set you up if helpful!",
           },
-          {
-            userId: user.id,
-            keywordId: createdKw.id,
-            platform: "TWITTER",
-            externalId: "tw-sample-102",
-            title: "Looking for a budget-friendly Twitter & Reddit social listener.",
-            content: "Looking for an alternative to Brand24 that doesn't cost an arm and a leg. Just need 3 keyword alerts sent to my Discord. Recommendations?",
-            author: "sarah_indie",
-            url: "https://x.com/sarah_indie/status/sample102",
-            intentScore: "HIGH",
-            status: "PITCHED",
-            pitchDraft: "@sarah_indie Hey Sarah! Check out SignalPulse (https://signalpulse.io) — built for solo makers with instant Discord webhook alerts and zero enterprise bloat. Flat $9/mo or $39 Lifetime Deal.",
-          },
-        ],
-      });
-    } else if (kw.phrase === "recommend tool for social listening") {
-      await prisma.lead.createMany({
-        data: [
-          {
-            userId: user.id,
-            keywordId: createdKw.id,
-            platform: "REDDIT",
-            externalId: "rd-sample-201",
-            title: "What is the best tool for social listening on Reddit in 2026?",
-            content: "I want to track discussions in r/startups and r/entrepreneur when someone asks for software recommendations in our industry. What do people use nowadays?",
-            author: "growth_sam",
-            url: "https://reddit.com/r/startups/comments/sample201",
-            sourceSubreddit: "startups",
-            intentScore: "HIGH",
-            status: "NEW",
-            pitchDraft: "Hey Sam! For Reddit specifically, most tools are either too expensive or too slow. Check out SignalPulse (https://signalpulse.io) — it scans new discussions and scores high-buyer intent so you only get pinged when someone is actually looking to buy.",
-          },
-        ],
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          keywordId: createdKw.id,
+          platform: "REDDIT",
+          externalId: "rd-sample-101",
+          title: "Anyone know a solid, cheaper alternative to Brand24? $149/mo is insane for an early-stage startup.",
+          content: "We just launched our micro-app and want to monitor Reddit/Twitter mentions of our niche keywords. Brand24 and Mention both want over $100/month with annual commitments. Any affordable indie-friendly alternatives that send alerts to Telegram or Discord?",
+          author: "dev_marcus",
+          url: "https://reddit.com/r/startups/comments/sample101",
+          sourceSubreddit: "startups",
+          intentScore: "HIGH",
+          status: "NEW",
+          pitchDraft: "Hey Marcus! Solo founder here. We ran into this exact problem — enterprise tools charging $150/mo for bloated charts. Built SignalPulse (https://signalpulse.io) to do exactly this for $9/mo. It pings your Telegram within 60s of a post going live. Happy to set you up if helpful!",
+        },
       });
     }
   }
 
-  // 4. Seed LTD License Keys for Instant Redemption
+  // 5. Seed LTD License Keys for Instant Redemption
   const promoKeys = ["SIGNAL-LTD-PRO-2026", "LTD-FOUNDER-39", "APPSUMO-PULSE-99", "INDIE-RADAR-LTD"];
   for (const code of promoKeys) {
     await prisma.licenseKey.upsert({
@@ -129,7 +150,6 @@ async function main() {
     });
   }
 
-  console.log(`🎟️ Seeded ${promoKeys.length} LTD promotional license keys.`);
   console.log("✅ Database seeding complete!");
 }
 

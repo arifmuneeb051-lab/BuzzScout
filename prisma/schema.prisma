@@ -1,4 +1,4 @@
-// SignalPulse SaaS Prisma Database Schema
+// SignalPulse Platform Prisma Database Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -14,11 +14,13 @@ model User {
   email        String         @unique
   password     String
   name         String?
+  role         String         @default("USER") // USER, ADMIN
   productName  String?        @default("My Product")
   productUrl   String?        @default("https://myproduct.io")
   productPitch String?        @default("An affordable and fast modern solution for founders.")
-  plan         String         @default("FREE") // FREE, PRO, LTD
-  planStatus   String         @default("ACTIVE")
+  plan         String         @default("TRIAL") // TRIAL, PRO, LTD
+  planStatus   String         @default("ACTIVE") // ACTIVE, SUSPENDED
+  trialEndsAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -34,7 +36,7 @@ model Keyword {
   phrase           String
   platform         String    @default("ALL") // ALL, REDDIT, TWITTER
   negativeKeywords String?   // comma-separated, e.g. "hiring, job, intern"
-  targetSubreddits String?   // comma-separated, e.g. "SaaS, startups, Entrepreneur"
+  targetSubreddits String?   // comma-separated, e.g. "startups, Entrepreneur"
   active           Boolean   @default(true)
   leadsCount       Int       @default(0)
   lastCheckedAt    DateTime?
@@ -87,4 +89,16 @@ model LicenseKey {
   usedByEmail String?
   createdAt   DateTime  @default(now())
   redeemedAt  DateTime?
+}
+
+model SiteConfig {
+  id               String   @id @default("default")
+  heroHeadline     String   @default("Turn Reddit & X Conversations Into Paying Customers on Autopilot.")
+  heroSubtitle     String   @default("Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.")
+  announcementText String   @default("Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access")
+  trialDays        Int      @default(7)
+  monthlyPrice     Int      @default(9)
+  ltdPrice         Int      @default(39)
+  agencyPrice      Int      @default(79)
+  updatedAt        DateTime @updatedAt
 }

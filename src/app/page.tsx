@@ -163,6 +163,17 @@ export default function LandingPage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
@@ -727,10 +738,16 @@ export default function LandingPage() {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  <span
+                    className={`text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg border transition-all ${
+                      theme === "dark"
+                        ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                        : "bg-indigo-50 text-indigo-950 border-indigo-200 shadow-sm"
+                    }`}
+                  >
                     STEP {item.step}
                   </span>
-                  <item.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <item.icon className={`w-5 h-5 ${theme === "dark" ? "text-indigo-400" : "text-indigo-600"}`} />
                 </div>
                 <h4
                   className={`text-lg font-bold ${
@@ -791,13 +808,31 @@ export default function LandingPage() {
               Why check a web dashboard every hour? SignalPulse routes leads straight to your Telegram bot or private Discord channel with direct link buttons. Pitch the buyer while the thread is still fresh.
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
-              <span className="px-3 py-1 rounded-full border text-xs font-mono font-semibold bg-slate-500/5 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-slate-800/80 text-slate-200 border-slate-700/80"
+                    : "bg-slate-100 text-slate-900 border-slate-300 shadow-sm"
+                }`}
+              >
                 Telegram Bot API
               </span>
-              <span className="px-3 py-1 rounded-full border text-xs font-mono font-semibold bg-slate-500/5 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-slate-800/80 text-slate-200 border-slate-700/80"
+                    : "bg-slate-100 text-slate-900 border-slate-300 shadow-sm"
+                }`}
+              >
                 Discord Webhooks
               </span>
-              <span className="px-3 py-1 rounded-full border text-xs font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
+                }`}
+              >
                 Sub-60s Latency
               </span>
             </div>
@@ -822,7 +857,11 @@ export default function LandingPage() {
             >
               Don't sound like a corporate spammer. Our AI generates 3 customized, value-driven reply styles designed to pass strict community guidelines:
             </p>
-            <div className="pt-1 text-xs text-indigo-600 dark:text-indigo-400 font-mono font-bold space-y-1">
+            <div
+              className={`pt-1 text-xs font-mono font-bold space-y-1 ${
+                theme === "dark" ? "text-indigo-400" : "text-indigo-900"
+              }`}
+            >
               <p>• Helpful & Value-First (Advice focus)</p>
               <p>• Founder Story (Authentic solo maker)</p>
               <p>• Direct & Concise (Twitter-ready)</p>
@@ -870,13 +909,31 @@ export default function LandingPage() {
               Other platforms pass enormous API costs down to you. SignalPulse is engineered with resilient public search endpoints and rotating client signatures, keeping your operational costs at exactly $0.
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
-              <span className="px-3 py-1 rounded-full border text-xs font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
+                }`}
+              >
                 $0 API Overhead
               </span>
-              <span className="px-3 py-1 rounded-full border text-xs font-mono font-semibold bg-slate-500/5 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-slate-800/80 text-slate-200 border-slate-700/80"
+                    : "bg-slate-100 text-slate-900 border-slate-300 shadow-sm"
+                }`}
+              >
                 Public JSON Search Streams
               </span>
-              <span className="px-3 py-1 rounded-full border text-xs font-mono font-semibold bg-slate-500/5 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800">
+              <span
+                className={`px-3.5 py-1.5 rounded-full border text-xs font-mono font-bold transition-all ${
+                  theme === "dark"
+                    ? "bg-slate-800/80 text-slate-200 border-slate-700/80"
+                    : "bg-slate-100 text-slate-900 border-slate-300 shadow-sm"
+                }`}
+              >
                 X (Twitter) Feed Adapter
               </span>
             </div>
@@ -1146,7 +1203,13 @@ export default function LandingPage() {
           {/* Card 1: Free Trial */}
           <div className="bento-card rounded-3xl p-8 space-y-6 flex flex-col justify-between flash-card-glow">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${
+                  theme === "dark"
+                    ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                    : "bg-indigo-50 text-indigo-950 border-indigo-200 shadow-sm"
+                }`}
+              >
                 <Clock className="w-3.5 h-3.5" />
                 <span>{siteConfig.trialDays}-Day Free Trial</span>
               </div>
@@ -1283,7 +1346,13 @@ export default function LandingPage() {
           {/* Card 3: Agency & Power */}
           <div className="bento-card rounded-3xl p-8 space-y-6 flex flex-col justify-between flash-card-glow">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${
+                  theme === "dark"
+                    ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                    : "bg-purple-50 text-purple-950 border-purple-200 shadow-sm"
+                }`}
+              >
                 <span>Power Users</span>
               </div>
               <div>

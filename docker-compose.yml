@@ -1,0 +1,19 @@
+services:
+  signalpulse-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signalpulse-saas
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - JWT_SECRET=signalpulse-super-secret-production-jwt-key-2026
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - CRON_SECRET=signalpulse_cron_secret_token_9988
+    volumes:
+      - signalpulse_data:/app/prisma
+
+volumes:
+  signalpulse_data:

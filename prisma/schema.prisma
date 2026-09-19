@@ -1,0 +1,90 @@
+// SignalPulse SaaS Prisma Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  password     String
+  name         String?
+  productName  String?        @default("My Product")
+  productUrl   String?        @default("https://myproduct.io")
+  productPitch String?        @default("An affordable and fast modern solution for founders.")
+  plan         String         @default("FREE") // FREE, PRO, LTD
+  planStatus   String         @default("ACTIVE")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  keywords     Keyword[]
+  leads        Lead[]
+  channels     AlertChannel[]
+}
+
+model Keyword {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phrase           String
+  platform         String    @default("ALL") // ALL, REDDIT, TWITTER
+  negativeKeywords String?   // comma-separated, e.g. "hiring, job, intern"
+  targetSubreddits String?   // comma-separated, e.g. "SaaS, startups, Entrepreneur"
+  active           Boolean   @default(true)
+  leadsCount       Int       @default(0)
+  lastCheckedAt    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  leads            Lead[]
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keywordId       String
+  keyword         Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  platform        String   // REDDIT, TWITTER
+  externalId      String   // Reddit submission ID or Tweet ID
+  title           String
+  content         String
+  author          String
+  authorUrl       String?
+  url             String
+  sourceSubreddit String?
+  intentScore     String   @default("HIGH") // HIGH, MEDIUM, LOW
+  status          String   @default("NEW") // NEW, PITCHED, SAVED, DISMISSED
+  pitchDraft      String?
+  detectedAt      DateTime @default(now())
+
+  @@unique([userId, externalId])
+}
+
+model AlertChannel {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String   // TELEGRAM, DISCORD
+  telegramBotToken  String?
+  telegramChatId    String?
+  discordWebhookUrl String?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model LicenseKey {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  plan        String    @default("LTD")
+  isUsed      Boolean   @default(false)
+  usedByEmail String?
+  createdAt   DateTime  @default(now())
+  redeemedAt  DateTime?
+}

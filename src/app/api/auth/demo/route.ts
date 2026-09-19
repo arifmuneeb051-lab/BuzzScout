@@ -32,7 +32,7 @@ export async function POST() {
             phrase: "alternative to brand24",
             platform: "ALL",
             negativeKeywords: "free, crack, pirate",
-            targetSubreddits: "SaaS, startups, Entrepreneur",
+            targetSubreddits: "startups, Entrepreneur, marketing",
             active: true,
           },
           {

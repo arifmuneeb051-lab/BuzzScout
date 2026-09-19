@@ -105,7 +105,7 @@ export default function RegisterPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="founder@saas.com"
+                    placeholder="founder@company.com"
                     className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                       type="url"
                       value={formData.productUrl}
                       onChange={(e) => setFormData({ ...formData, productUrl: e.target.value })}
-                      placeholder="https://mysaas.com"
+                      placeholder="https://myproduct.com"
                       className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
                     />
                   </div>

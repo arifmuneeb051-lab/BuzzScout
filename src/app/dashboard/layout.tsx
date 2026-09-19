@@ -122,7 +122,7 @@ export default function DashboardLayout({
               </span>
             </div>
             <p className="text-[11px] text-slate-500 truncate">
-              Product: <span className="text-slate-400">{user?.productName || "My SaaS"}</span>
+              Product: <span className="text-slate-400">{user?.productName || "My Product"}</span>
             </p>
           </div>
 

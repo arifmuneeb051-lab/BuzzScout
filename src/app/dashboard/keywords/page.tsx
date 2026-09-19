@@ -44,7 +44,7 @@ export default function KeywordsPage() {
     phrase: "",
     platform: "ALL",
     negativeKeywords: "hiring, job, intern, cracked, free",
-    targetSubreddits: "SaaS, startups, Entrepreneur",
+    targetSubreddits: "startups, Entrepreneur, marketing",
   });
 
   const fetchKeywords = async () => {
@@ -86,7 +86,7 @@ export default function KeywordsPage() {
         phrase: "",
         platform: "ALL",
         negativeKeywords: "hiring, job, intern, cracked, free",
-        targetSubreddits: "SaaS, startups, Entrepreneur",
+        targetSubreddits: "startups, Entrepreneur, marketing",
       });
       setShowAddModal(false);
       fetchKeywords();
@@ -360,7 +360,7 @@ export default function KeywordsPage() {
                     type="text"
                     value={formData.targetSubreddits}
                     onChange={(e) => setFormData({ ...formData, targetSubreddits: e.target.value })}
-                    placeholder="SaaS, startups"
+                    placeholder="startups, marketing"
                     className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>

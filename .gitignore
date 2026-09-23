@@ -45,6 +45,7 @@ scripts/execute_master_purge.ts
 scripts/check_extras.ts
 scripts/inspect_db.ts
 scripts/list_all_users.py
+scripts/generate_favicon.py
 
 # Local IDE & AI Agent Metadata
 .claude/

@@ -228,7 +228,7 @@ export default function LandingPage() {
   const faqs = [
     {
       q: "How does BuzzScout subscription & lifetime access work?",
-      a: `You can choose between our flexible $${siteConfig.monthlyPrice}/month Pro subscription (cancel anytime with 1 click) or lock in our most popular $${siteConfig.ltdPrice} Lifetime Founder Pass with zero recurring fees forever. Both plans activate immediately upon payment with a 14-day satisfaction guarantee.`,
+      a: `You can choose between our flexible $${siteConfig.monthlyPrice}/month Pro subscription or lock in our most popular $${siteConfig.ltdPrice} Lifetime Founder Pass (Early Bird: 99 Left) with zero recurring fees forever (Regularly $180 · Save over 80%). Both plans activate immediately upon payment with a 40-day money-back guarantee.`,
     },
     {
       q: "Do I need to pay for expensive Reddit or Twitter API access?",
@@ -1363,7 +1363,7 @@ export default function LandingPage() {
                   Pro Monthly
                 </h4>
                 <p className={`text-xs mt-1 font-medium ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Ideal for solo builders and indie founders. Cancel anytime.
+                  Ideal for solo builders and indie founders. Zero API fees.
                 </p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className={`text-4xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
@@ -1393,7 +1393,11 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Zero API fees & cancel anytime</span>
+                  <span>Zero API fees</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>40-Day Money-Back Guarantee</span>
                 </li>
               </ul>
             </div>
@@ -1418,8 +1422,9 @@ export default function LandingPage() {
             }`}
           >
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wide shadow-md">
-                <span>MOST POPULAR • LIFETIME DEAL</span>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wide shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+                <span>EARLY BIRD (99 LEFT) • LIFETIME DEAL</span>
               </div>
               <div>
                 <h4
@@ -1436,13 +1441,16 @@ export default function LandingPage() {
                 >
                   Pay once, monitor leads forever — zero monthly fees
                 </p>
-                <div className="mt-4 flex items-baseline gap-1">
+                <div className="mt-4 flex items-baseline gap-2 flex-wrap">
                   <span
                     className={`text-5xl font-extrabold ${
                       theme === "dark" ? "text-white" : "text-slate-950"
                     }`}
                   >
                     ${siteConfig.ltdPrice}
+                  </span>
+                  <span className="text-base line-through text-slate-400 font-bold">
+                    $180
                   </span>
                   <span
                     className={`text-xs font-bold ${
@@ -1451,6 +1459,9 @@ export default function LandingPage() {
                   >
                     one-time payment
                   </span>
+                </div>
+                <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold">
+                  <span>Regularly $180 · Save over 80%</span>
                 </div>
               </div>
               <ul
@@ -1477,6 +1488,10 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   <span>High-Intent Lead Filter (No spam/jobs)</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>40-Day Money-Back Guarantee</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />

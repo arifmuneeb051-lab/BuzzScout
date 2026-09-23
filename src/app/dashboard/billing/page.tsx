@@ -344,7 +344,11 @@ export default function BillingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Cancel anytime with 1 click</span>
+                  <span>Zero API fees</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold text-emerald-400">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>40-Day Money-Back Guarantee</span>
                 </li>
               </ul>
             </div>
@@ -359,8 +363,8 @@ export default function BillingPage() {
 
           {/* Plan 2: Lifetime Founder Pass (Featured) */}
           <div className="p-6 rounded-3xl bg-gradient-to-b from-[#16233e] to-[#0c1426] border-2 border-indigo-500 shadow-2xl shadow-indigo-600/30 flex flex-col justify-between space-y-6 relative">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
-              Most Popular
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+              Early Bird (99 Left) • Most Popular
             </span>
             <div className="space-y-4">
               <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wide">
@@ -368,9 +372,13 @@ export default function BillingPage() {
               </span>
               <div>
                 <h4 className="text-xl font-extrabold text-white">Lifetime Founder Pass</h4>
-                <div className="mt-2 flex items-baseline gap-1">
+                <div className="mt-2 flex items-baseline gap-2 flex-wrap">
                   <span className="text-5xl font-extrabold text-white">$25</span>
+                  <span className="text-sm line-through text-slate-400 font-bold">$180</span>
                   <span className="text-xs text-indigo-300">one-time payment</span>
+                </div>
+                <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
+                  <span>Regularly $180 · Save over 80%</span>
                 </div>
               </div>
               <ul className="space-y-2.5 text-xs text-slate-200 font-medium">
@@ -389,6 +397,10 @@ export default function BillingPage() {
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>Zero monthly subscription fees forever</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold text-emerald-400">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>40-Day Money-Back Guarantee</span>
                 </li>
               </ul>
             </div>

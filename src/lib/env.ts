@@ -8,7 +8,7 @@ export interface EnvConfig {
   DIRECT_URL?: string;
   JWT_SECRET: string;
   ADMIN_EMAIL: string;
-  ADMIN_PASSWORD: string;
+  ADMIN_PASSWORD?: string;
   CRON_SECRET?: string;
   NEXT_PUBLIC_APP_URL: string;
   NODE_ENV: string;
@@ -34,9 +34,7 @@ export function validateEnv(): EnvConfig {
   }
 
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-  if (!ADMIN_PASSWORD) {
-    missingCritical.push("ADMIN_PASSWORD - Master administrator secure password");
-  }
+  // SuperUser accesses strictly via Google Sign-In, so password is optional internal legacy fallback
 
   if (missingCritical.length > 0) {
     const errorMsg =

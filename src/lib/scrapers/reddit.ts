@@ -26,7 +26,7 @@ export async function searchReddit(query: string, subreddit?: string | null): Pr
     const res = await fetch(targetUrl, {
       headers: {
         // Reddit requires a descriptive User-Agent to prevent 429
-        "User-Agent": "web:signalpulse-radar-engine:v1.0.0 (by /u/signalpulse_bot)",
+        "User-Agent": "web:buzzscout-radar-engine:v1.0.0 (by /u/buzzscout_bot)",
         "Accept": "application/json",
       },
       next: { revalidate: 30 },

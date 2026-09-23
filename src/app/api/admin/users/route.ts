@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -46,7 +47,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ users });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }
 
@@ -61,6 +63,14 @@ export async function PATCH(req: Request) {
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    if (targetUser.role === "ADMIN" || targetUser.email.toLowerCase() === admin.email.toLowerCase()) {
+      return NextResponse.json({ error: "Master Administrator account is protected from modification" }, { status: 403 });
     }
 
     const data: any = {};
@@ -81,7 +91,68 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true, user: updated });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized admin access" }, { status: 401 });
+  }
+
+  try {
+    const { email, plan, name } = await req.json();
+
+    if (!email || !plan) {
+      return NextResponse.json({ error: "Email and plan are required" }, { status: 400 });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    let user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (user) {
+      // User exists -> update plan and activate immediately
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          plan: plan,
+          planStatus: "ACTIVE",
+          ...(name ? { name } : {}),
+        },
+      });
+      return NextResponse.json({
+        success: true,
+        message: `Updated ${cleanEmail} to plan ${plan} with ACTIVE status!`,
+        user,
+      });
+    } else {
+      // User does not exist -> create account directly with chosen plan and ACTIVE status
+      const { hashPassword } = await import("@/lib/auth");
+      const tempPass = await hashPassword("BuzzScoutPass2026!");
+      user = await prisma.user.create({
+        data: {
+          email: cleanEmail,
+          password: tempPass,
+          name: name || "Granted User",
+          role: "USER",
+          plan: plan,
+          planStatus: "ACTIVE",
+        },
+      });
+      return NextResponse.json({
+        success: true,
+        message: `Created account for ${cleanEmail} with plan ${plan} (Password: BuzzScoutPass2026!)`,
+        user,
+      });
+    }
+  } catch (err: any) {
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }
 
@@ -99,12 +170,21 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    if (targetUser.role === "ADMIN" || targetUser.email.toLowerCase() === admin.email.toLowerCase()) {
+      return NextResponse.json({ error: "Master Administrator account is protected and cannot be deleted" }, { status: 403 });
+    }
+
     await prisma.user.delete({
       where: { id: userId },
     });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

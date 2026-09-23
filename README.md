@@ -1,15 +1,21 @@
-# 🎯 SignalPulse SaaS — High-Intent Social Buyer Radar
+# 🎯 BuzzScout — High-Intent Social Buyer Radar
 
 > **Turn Reddit & X Conversations into Paying Customers — On Autopilot.**  
 > Built for solo founders, indie hackers, and freelancers who can't afford $100+/mo tools like Brand24 or Mention.
+
+> [!CAUTION]
+> **CRITICAL PRE-DEPLOYMENT NOTICE — SECRET ROTATION MANDATORY**:  
+> If any secrets (such as Supabase database credentials, JWT secret, Admin password, or API keys) were previously configured in local development files or past commits, those values remain archived in Git history.  
+> **You MUST rotate/change your Supabase database password, JWT secret, and Master Admin credentials in your provider dashboards before deploying to production!**  
+> Never commit `.env` or `.env.local` to public or private git repositories. Use `.env.example` as a template.
 
 ---
 
 ## ⚡ The Opportunity & Market Gap
 
-| Traditional Tools (Brand24, Mention) | SignalPulse SaaS |
+| Traditional Tools (Brand24, Mention) | BuzzScout SaaS |
 | :--- | :--- |
-| 💸 **\$99 – \$149+ per month** | 💰 **\$9/month** or **\$39 Lifetime Deal (LTD)** |
+| 💸 **\$99 – \$149+ per month** | 💰 **\$5/month** or **\$35 Lifetime Deal (LTD)** |
 | 🏢 Built for Fortune 500 PR teams | 🚀 Built for Indie Hackers, Solopreneurs & Freelancers |
 | 📉 Bloated charts & vanity metrics | 🎯 Strict focus on **Buyer Intent** ("alternative to X") |
 | 🐌 Require complicated Zapier workflows | ⚡ Instant **Telegram Bot & Discord Webhook pings in < 60s** |
@@ -26,23 +32,20 @@
 - **Instant Multi-Channel Push**:
   - **Telegram Bot**: Formatted HTML push notifications with inline buttons to jump straight to the post.
   - **Discord Webhooks**: Color-coded rich embed cards matching intent urgency.
-- **One-Click AI Pitch Drafter**: Generates 3 contextual, high-converting replies for each lead:
-  1. *Helpful & Value-First* (Community friendly, zero spam)
-  2. *Founder Story* (Authentic peer maker connection)
-  3. *Direct & Concise* (Twitter-friendly)
-- **High-Converting Landing Page**: Featuring an interactive live radar simulator, Brand24 comparison table, ROI calculator, and \$9/mo vs \$39 LTD pricing toggle.
+- **One-Click AI Pitch Drafter**: Generates contextual, high-converting replies tailored to your product pitch.
 - **Monetization Engine**:
-  - \$9/month recurring tier
-  - \$39 Lifetime Deal (LTD) with built-in promo code redemption engine
-- **Authentication**: JWT session auth with bcrypt hashing + Instant 1-Click Demo Login.
+  - \$5/month recurring Pro tier
+  - \$35 Lifetime Deal (LTD) with built-in promo code redemption engine
+  - \$79/month Agency tier
+- **Authentication**: Secure JWT session auth with bcrypt hashing (10 salt rounds).
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Frontend & Fullstack**: Next.js 15 (App Router, Server Actions, React 19, TypeScript)
-- **Styling**: Tailwind CSS, Lucide Icons, Glassmorphic modern dark design
-- **Database & ORM**: Prisma ORM with SQLite (swappable to PostgreSQL/Supabase with 1 config change)
+- **Styling**: Tailwind CSS, Lucide Icons, Modern dark glassmorphic UI
+- **Database & ORM**: Prisma ORM with Supabase PostgreSQL
 - **Dispatchers**: Telegram Bot API & Discord Webhook API
 - **Deployment**: Docker, Vercel, Render, Railway ready
 
@@ -57,20 +60,17 @@
 ### 2. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/arifmuneeb051-lab/signalpulse-saas.git
-cd signalpulse-saas
+git clone https://github.com/arifmuneeb051-lab/buzzscout.git
+cd buzzscout
 
 # Install dependencies
 npm install
 ```
 
-### 3. Database Setup & Seeding
+### 3. Database Setup
 ```bash
 # Push database schema
 npx prisma db push
-
-# Seed sample high-intent leads, demo keywords, and LTD promo codes
-npm run db:seed
 ```
 
 ### 4. Run Development Server
@@ -81,32 +81,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔑 Pre-Seeded Test Credentials & Promo Codes
-
-### Instant Demo Account
-- **Email:** `demo@signalpulse.io`
-- **Password:** `password123`
-*(Or simply click the **"1-Click Instant Demo Login"** button on the sign-in page!)*
-
-### Test Lifetime Deal (LTD) License Codes
-Use these on `/dashboard/billing` to instantly unlock the Lifetime Pro pass:
-- `SIGNAL-LTD-PRO-2026`
-- `LTD-FOUNDER-39`
-- `APPSUMO-PULSE-99`
-
----
-
 ## 📡 Automated Background Monitoring
 
 ### Option A: External Cron (Recommended for Vercel / Serverless)
-Set up a free cron job on [cron-job.org](https://cron-job.org) or GitHub Actions to ping:
+Set up a cron job on [cron-job.org](https://cron-job.org) or GitHub Actions to ping:
 ```
 POST https://your-domain.com/api/cron/monitor
 Authorization: Bearer YOUR_CRON_SECRET
-```
-Or with query parameter:
-```
-https://your-domain.com/api/cron/monitor?secret=signalpulse_cron_secret_token_9988
 ```
 
 ### Option B: Standalone Worker (For VPS / Docker)
@@ -122,10 +103,7 @@ npm run worker
 ### Deploy to Vercel (1-Click)
 1. Push this repository to your GitHub account.
 2. Import the repo on [Vercel](https://vercel.com).
-3. Set the Environment Variables:
-   - `JWT_SECRET`: Random secure string (e.g. `openssl rand -hex 32`)
-   - `CRON_SECRET`: Random secure string
-   - `DATABASE_URL`: Your production database URL (e.g. Postgres on Neon or Supabase)
+3. Set Environment Variables (`DATABASE_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`).
 4. Deploy!
 
 ### Deploy via Docker
@@ -133,20 +111,6 @@ npm run worker
 docker compose up -d --build
 ```
 Your SaaS will be running at `http://localhost:3000`.
-
----
-
-## 💰 Monetization Guide (How to sell as a SaaS)
-
-1. **Stripe / LemonSqueezy Integration**:
-   - Create two products in LemonSqueezy or Stripe:
-     - Product 1: "SignalPulse Pro" (\$9/month)
-     - Product 2: "SignalPulse Lifetime Deal" (\$39 one-time)
-   - When a customer purchases the \$39 LTD, generate a license key in `LicenseKey` table and email it to the user.
-2. **AppSumo / Product Hunt Launch**:
-   - Offer the \$39 LTD on AppSumo marketplace or Product Hunt launch day to quickly acquire your first 500 customers (\$19,500 in upfront cashflow).
-3. **Indie Hacker Outreach**:
-   - Use SignalPulse to dogfood itself: monitor *"alternative to brand24"* on Reddit and reply with your customized pitch!
 
 ---
 

@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SignalPulse — High-Intent Social Buyer Lead Monitor",
+  title: "BuzzScout — Real-Time Social Listening & High-Intent Buyer Radar",
   description:
-    "Monitor Reddit & X for high-intent buyer phrases in real-time. Get instant Telegram & Discord alerts with one-click AI sales pitches. Flat $9/mo or $39 Lifetime Deal.",
+    "Monitor Reddit & X for high-intent buyer discussions in real-time. Get sub-60s Telegram & Discord alerts with 1-click AI sales pitches. Disruptive $5/mo or $25 Lifetime Deal.",
   keywords: [
+    "BuzzScout",
     "social listening",
     "reddit monitor",
     "twitter monitor",
-    "indie hacker leads",
+    "buyer leads radar",
     "brand24 alternative",
     "mention alternative",
-    "lead generation",
+    "lead conversion",
   ],
 };
 

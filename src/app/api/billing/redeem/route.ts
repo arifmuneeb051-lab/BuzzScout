@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { formatSafeError } from "@/lib/security";
+import { getCurrentUser, signJwt, COOKIE_NAME } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function POST(req: Request) {
@@ -17,22 +18,9 @@ export async function POST(req: Request) {
 
     const cleanCode = code.trim().toUpperCase();
 
-    // Check if license key exists
-    const license = await prisma.licenseKey.findUnique({
-      where: { code: cleanCode },
-    });
-
-    if (!license) {
-      return NextResponse.json({ error: "Invalid license code. Please check and try again." }, { status: 404 });
-    }
-
-    if (license.isUsed) {
-      return NextResponse.json({ error: "This license key has already been redeemed." }, { status: 400 });
-    }
-
-    // Mark license as used
-    await prisma.licenseKey.update({
-      where: { id: license.id },
+    // Atomic update to eliminate race condition / double-redemption
+    const updateResult = await prisma.licenseKey.updateMany({
+      where: { code: cleanCode, isUsed: false },
       data: {
         isUsed: true,
         usedByEmail: user.email,
@@ -40,21 +28,67 @@ export async function POST(req: Request) {
       },
     });
 
-    // Upgrade user to LTD
+    if (updateResult.count === 0) {
+      const existing = await prisma.licenseKey.findUnique({ where: { code: cleanCode } });
+      if (!existing) {
+        return NextResponse.json({ error: "Invalid license code. Please check and try again." }, { status: 404 });
+      }
+      return NextResponse.json({ error: "This license key has already been redeemed." }, { status: 400 });
+    }
+
+    const license = await prisma.licenseKey.findUnique({ where: { code: cleanCode } });
+    const targetPlan = license?.plan || "LTD";
+
+    // Upgrade user to key's plan
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
-        plan: "LTD",
+        plan: targetPlan,
         planStatus: "ACTIVE",
       },
     });
 
-    return NextResponse.json({
+    // Create payment transaction audit
+    await prisma.paymentTransaction.create({
+      data: {
+        userId: user.id,
+        userEmail: user.email,
+        amount: 0.0,
+        currency: "usd",
+        plan: targetPlan,
+        status: "COMPLETED",
+        paymentMethod: "ADMIN_LICENSE_KEY",
+        cardLast4: "KEY",
+      },
+    });
+
+    const token = signJwt({
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      plan: updatedUser.plan,
+      planStatus: updatedUser.planStatus,
+      role: updatedUser.role,
+      avatarUrl: updatedUser.avatarUrl,
+    });
+
+    const isLocalhost = req.url.includes("localhost") || req.url.includes("127.0.0.1");
+    const response = NextResponse.json({
       success: true,
-      message: "Congratulations! Your account has been upgraded to Lifetime Deal (LTD) Pro!",
+      message: `Congratulations! Your account has been upgraded to ${targetPlan} access!`,
       plan: updatedUser.plan,
     });
+
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" && !isLocalhost,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+    });
+
+    return response;
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

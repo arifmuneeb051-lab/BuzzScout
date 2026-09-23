@@ -1,5 +1,5 @@
 {
-  "name": "signalpulse-saas",
+  "name": "buzzscout",
   "version": "1.0.0",
   "private": true,
   "description": "High-intent Reddit & X (Twitter) keyword monitor and real-time buyer lead alert system with AI pitch drafting.",
@@ -17,9 +17,11 @@
     "@prisma/client": "^6.1.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
+    "framer-motion": "^13.4.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.468.0",
     "mongodb": "^7.6.0",
+    "motion": "^13.4.0",
     "next": "^15.1.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -27,6 +29,7 @@
     "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
+    "@21st-dev/cli": "^1.17.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.2",
@@ -37,6 +40,7 @@
     "prisma": "^6.1.0",
     "tailwindcss": "^3.4.16",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "ui-ux-pro-max-cli": "^2.15.0"
   }
 }

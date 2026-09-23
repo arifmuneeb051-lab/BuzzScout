@@ -1,7 +1,14 @@
 import Stripe from "stripe";
 import { prisma } from "./db";
 
-export async function getStripeInstance(): Promise<{ stripe: Stripe | null; paymentLink: string | null; mode: string }> {
+export async function getStripeInstance(): Promise<{
+  stripe: Stripe | null;
+  paymentLink: string | null;
+  monthlyLink: string | null;
+  ltdLink: string | null;
+  agencyLink: string | null;
+  mode: string;
+}> {
   try {
     const config = await prisma.siteConfig.findUnique({
       where: { id: "default" },
@@ -9,21 +16,32 @@ export async function getStripeInstance(): Promise<{ stripe: Stripe | null; paym
 
     const secretKey = config?.stripeSecretKey || process.env.STRIPE_SECRET_KEY || "";
     const paymentLink = config?.stripePaymentLink || process.env.STRIPE_PAYMENT_LINK || null;
+    const monthlyLink = config?.stripeMonthlyLink || process.env.STRIPE_MONTHLY_LINK || null;
+    const ltdLink = config?.stripeLtdLink || process.env.STRIPE_LTD_LINK || null;
+    const agencyLink = config?.stripeAgencyLink || process.env.STRIPE_AGENCY_LINK || null;
     const mode = config?.paymentMode || "TEST";
 
     if (!secretKey) {
-      return { stripe: null, paymentLink, mode };
+      return { stripe: null, paymentLink, monthlyLink, ltdLink, agencyLink, mode };
     }
 
     const stripe = new Stripe(secretKey, {
       apiVersion: "2024-12-18.acacia" as any,
     });
 
-    return { stripe, paymentLink, mode };
+    return { stripe, paymentLink, monthlyLink, ltdLink, agencyLink, mode };
   } catch (err) {
     console.error("Failed to initialize Stripe instance:", err);
-    return { stripe: null, paymentLink: null, mode: "TEST" };
+    return { stripe: null, paymentLink: null, monthlyLink: null, ltdLink: null, agencyLink: null, mode: "TEST" };
   }
+}
+
+export async function getPlanPaymentUrl(plan: "PRO" | "LTD" | "AGENCY"): Promise<string | null> {
+  const { paymentLink, monthlyLink, ltdLink, agencyLink } = await getStripeInstance();
+  if (plan === "PRO" && monthlyLink) return monthlyLink;
+  if (plan === "LTD" && ltdLink) return ltdLink;
+  if (plan === "AGENCY" && agencyLink) return agencyLink;
+  return paymentLink;
 }
 
 export async function createCheckoutSession({
@@ -39,12 +57,13 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
-  const { stripe, paymentLink } = await getStripeInstance();
-
-  // If owner configured a direct Stripe Payment Link (e.g. https://buy.stripe.com/...)
-  if (paymentLink) {
-    return { url: paymentLink };
+  // Check if owner provided a direct plan link
+  const directLink = await getPlanPaymentUrl(plan);
+  if (directLink) {
+    return { url: directLink };
   }
+
+  const { stripe } = await getStripeInstance();
 
   if (!stripe) {
     return null;
@@ -52,10 +71,10 @@ export async function createCheckoutSession({
 
   const config = await prisma.siteConfig.findUnique({ where: { id: "default" } });
   const priceAmount = plan === "PRO" 
-    ? (config?.monthlyPrice || 9) * 100 
+    ? (config?.monthlyPrice || 5) * 100 
     : plan === "AGENCY" 
     ? (config?.agencyPrice || 79) * 100 
-    : (config?.ltdPrice || 39) * 100;
+    : (config?.ltdPrice || 35) * 100;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -66,7 +85,7 @@ export async function createCheckoutSession({
         price_data: {
           currency: "usd",
           product_data: {
-            name: plan === "PRO" ? "SignalPulse Pro Monthly" : plan === "AGENCY" ? "SignalPulse Agency Founder Pass" : "SignalPulse Lifetime Founder Pass (LTD)",
+            name: plan === "PRO" ? "BuzzScout Pro Monthly" : plan === "AGENCY" ? "BuzzScout Agency Founder Pass" : "BuzzScout Lifetime Founder Pass (LTD)",
             description: plan === "PRO" ? "Monthly access to real-time Reddit & X keyword monitoring" : "Lifetime access with zero recurring fees",
           },
           unit_amount: priceAmount,

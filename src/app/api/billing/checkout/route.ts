@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createCheckoutSession, getStripeInstance } from "@/lib/stripe";
+
+function isValidLuhn(cardNumber: string): boolean {
+  const digits = cardNumber.replace(/\D/g, "");
+  if (digits.length < 13 || digits.length > 19) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let digit = parseInt(digits.charAt(i), 10);
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+}
 
 export async function POST(req: Request) {
   try {
@@ -19,17 +37,22 @@ export async function POST(req: Request) {
 
     const config = await prisma.siteConfig.findUnique({ where: { id: "default" } });
     const amount = plan === "PRO" 
-      ? (config?.monthlyPrice || 9) 
+      ? (config?.monthlyPrice || 5) 
       : plan === "AGENCY" 
       ? (config?.agencyPrice || 79) 
-      : (config?.ltdPrice || 39);
+      : (config?.ltdPrice || 25);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://arifmuneeb051-lab-signalpulse-saas.vercel.app";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     // 1. If user requested Stripe Checkout
     if (method === "STRIPE") {
-      const { stripe, paymentLink } = await getStripeInstance();
+      const { stripe, paymentLink, monthlyLink, ltdLink, agencyLink } = await getStripeInstance();
       
+      const targetLink = plan === "PRO" ? monthlyLink : plan === "AGENCY" ? agencyLink : ltdLink;
+      if (targetLink) {
+        return NextResponse.json({ success: true, url: targetLink });
+      }
+
       if (paymentLink) {
         return NextResponse.json({ success: true, url: paymentLink });
       }
@@ -49,13 +72,31 @@ export async function POST(req: Request) {
       }
 
       return NextResponse.json(
-        { error: "Stripe gateway keys have not been configured by the admin yet. Please select 'Credit / Debit Card' or configure keys in Admin Portal." },
+        { error: "Stripe payment link is not configured yet. The admin can paste their Stripe Payment Link in Admin Portal, or you can use 'Credit / Debit Card' to upgrade immediately." },
         { status: 400 }
       );
     }
 
     // 2. Direct Credit Card / Debit Card Processing
-    const cardLast4 = cardNumber ? cardNumber.replace(/\s+/g, "").slice(-4) : "4242";
+    const cleanCard = cardNumber ? cardNumber.replace(/[\s-]/g, "") : "";
+
+    // Card security validation
+    if (cleanCard) {
+      const isRecognizedTestCard = cleanCard === "4242424242424242" || cleanCard === "4000000000000002";
+      if (!isRecognizedTestCard) {
+        if (!isValidLuhn(cleanCard)) {
+          return NextResponse.json(
+            { error: "Invalid credit or debit card number. Please check your card digits." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    const cardLast4 = cleanCard ? cleanCard.slice(-4) : "4242";
+
+    // Sanitize cardHolder to prevent XSS / malicious injection
+    const sanitizedHolder = cardHolder ? String(cardHolder).replace(/<[^>]*>/g, "").trim().slice(0, 80) : "Cardholder";
 
     // Update user plan in database
     const updatedUser = await prisma.user.update({
@@ -90,6 +131,7 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("Checkout processing error:", err);
-    return NextResponse.json({ error: err.message || "Failed to process payment" }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

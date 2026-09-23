@@ -143,7 +143,7 @@ export default function KeywordsPage() {
             Tracked Keywords & Phrases
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            SignalPulse scans social conversations matching these exact phrases and filters.
+            BuzzScout scans social conversations matching these exact phrases and filters.
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export default function KeywordsPage() {
           <Sparkles className="w-3.5 h-3.5" />
           Recommended High-Intent Phrases (Click to use)
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {HIGH_INTENT_TEMPLATES.map((tpl) => (
             <button
               key={tpl.phrase}
@@ -182,7 +182,7 @@ export default function KeywordsPage() {
 
       {/* Keywords Table */}
       <div className="rounded-2xl bg-[#0c1322] border border-white/5 overflow-hidden">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div className="p-3.5 sm:p-5 border-b border-white/5 flex items-center justify-between">
           <h3 className="text-base font-bold text-white">Active Radar Keywords ({keywords.length})</h3>
         </div>
 

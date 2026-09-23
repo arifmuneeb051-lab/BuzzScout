@@ -31,7 +31,7 @@ export async function getMongoDb(): Promise<Db | null> {
   try {
     const connectedClient = await clientPromise;
     if (!connectedClient) return null;
-    return connectedClient.db(process.env.MONGODB_DB_NAME || "signalpulse");
+    return connectedClient.db(process.env.MONGODB_DB_NAME || "buzzscout");
   } catch (err) {
     console.warn("MongoDB connection warning:", err);
     return null;

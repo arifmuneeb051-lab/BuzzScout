@@ -28,7 +28,7 @@ export function generatePitchTemplates(ctx: PitchContext): GeneratedPitchResult[
       recommendedAngle: "Great for technical subreddits and founder communities where hard selling gets downvoted.",
       text:
         ctx.platform === "REDDIT"
-          ? `Hey ${ctx.postAuthor}! Totally understand where you're coming from. Most legacy tools in this space are overpriced and bloated with features indie founders don't actually need.\n\n` +
+          ? `Hey u/${ctx.postAuthor}! Totally understand where you're coming from. Most legacy tools in this space are overpriced and bloated with features indie founders don't actually need.\n\n` +
             `If you haven't checked it out yet, take a look at [${prod}](${url}) — ${pitchDesc}.\n\n` +
             `It focuses specifically on doing the core job simply and reliably without locking you into a \$100+/mo contract. Hope this helps point you in the right direction!`
           : `${authorHandle} Saw you're looking for a better alternative. We built ${prod} (${url}) for this exact reason — ${pitchDesc}. No enterprise bloat or crazy pricing. Hope it helps!`,

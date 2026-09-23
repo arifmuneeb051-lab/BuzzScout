@@ -1,0 +1,30 @@
+# Version control
+.git
+.gitignore
+
+# Environment files and credentials (CRITICAL: NEVER BUNDLE IN DOCKER IMAGE)
+.env
+.env*
+*.env
+*.pem
+*.key
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build
+.next
+out
+
+# Local Databases & Backups
+*.db
+*.db-journal
+prisma/*.db*
+dev.db
+
+# Operating System
+.DS_Store
+Thumbs.db

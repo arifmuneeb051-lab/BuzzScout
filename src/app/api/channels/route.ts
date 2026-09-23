@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -8,6 +9,14 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isPlanActive = user.role === "ADMIN" || user.planStatus === "ACTIVE";
+  if (!isPlanActive) {
+    return NextResponse.json(
+      { error: "Error 403 Forbidden: Active subscription plan required to configure alert channels.", upgradeRequired: true },
+      { status: 403 }
+    );
+  }
+
   try {
     const channels = await prisma.alertChannel.findMany({
       where: { userId: user.id },
@@ -15,7 +24,8 @@ export async function GET() {
 
     return NextResponse.json({ channels });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }
 
@@ -25,11 +35,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isPlanActive = user.role === "ADMIN" || user.planStatus === "ACTIVE";
+  if (!isPlanActive) {
+    return NextResponse.json(
+      { error: "Error 403 Forbidden: Active subscription plan required to configure alert channels.", upgradeRequired: true },
+      { status: 403 }
+    );
+  }
+
   try {
     const { type, telegramBotToken, telegramChatId, discordWebhookUrl, active } = await req.json();
 
     if (!type || !["TELEGRAM", "DISCORD"].includes(type)) {
       return NextResponse.json({ error: "Valid channel type (TELEGRAM or DISCORD) required" }, { status: 400 });
+    }
+
+    // Subscription Check: Inactive users cannot configure real-time alert channels
+    const isPlanActive = user.role === "ADMIN" || user.planStatus === "ACTIVE";
+    if (!isPlanActive) {
+      return NextResponse.json(
+        {
+          error: "An active Pro subscription or Lifetime Founder Pass is required to configure alert channels.",
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
     }
 
     // Check if channel already exists for this type
@@ -63,6 +93,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, channel });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

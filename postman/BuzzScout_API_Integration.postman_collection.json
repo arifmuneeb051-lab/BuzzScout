@@ -1,0 +1,234 @@
+{
+  "info": {
+    "_postman_id": "81888574-4ba2-4c35-a3a4-3c6773102b93-buzzscout-api",
+    "name": "BuzzScout API & Integration Test Suite",
+    "description": "Integration testing suite for Reddit Search API, X (Twitter) Search API, Discord Webhook alerts, and Telegram Bot API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "TELEGRAM_BOT_TOKEN",
+      "value": "8254823902:AAH9L2M5_test_buzzscout",
+      "type": "string"
+    },
+    {
+      "key": "TEST_CHAT_ID",
+      "value": "987654321",
+      "type": "string"
+    },
+    {
+      "key": "DISCORD_WEBHOOK_URL",
+      "value": "https://discord.com/api/webhooks/test/buzzscout",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Reddit Public Search API (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "User-Agent",
+            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) BuzzScout-Monitor/2.0",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://www.reddit.com/r/startups/search.json?q=recommend+alternative&sort=new&limit=25&restrict_sr=1",
+          "protocol": "https",
+          "host": [
+            "www",
+            "reddit",
+            "com"
+          ],
+          "path": [
+            "r",
+            "startups",
+            "search.json"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "recommend+alternative"
+            },
+            {
+              "key": "sort",
+              "value": "new"
+            },
+            {
+              "key": "limit",
+              "value": "25"
+            },
+            {
+              "key": "restrict_sr",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "Fetches recent Reddit posts matching buyer intent queries without official developer API token."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Returns JSON data with children array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('children');",
+              "    pm.expect(jsonData.data.children).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. X (Twitter) Search Ingestion API (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{X_BEARER_TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://api.twitter.com/2/tweets/search/recent?query=%22best%20tool%20for%22%20-is%3Aretweet%20lang%3Aen&max_results=20&tweet.fields=created_at,author_id,public_metrics",
+          "protocol": "https",
+          "host": [
+            "api",
+            "twitter",
+            "com"
+          ],
+          "path": [
+            "2",
+            "tweets",
+            "search",
+            "recent"
+          ],
+          "query": [
+            {
+              "key": "query",
+              "value": "%22best%20tool%20for%22%20-is%3Aretweet%20lang%3Aen"
+            },
+            {
+              "key": "max_results",
+              "value": "20"
+            },
+            {
+              "key": "tweet.fields",
+              "value": "created_at,author_id,public_metrics"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 or 429 safely handled', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 429]);",
+              "});",
+              "if (pm.response.code === 429) {",
+              "    pm.test('Rate limit header present on 429', function () {",
+              "        pm.expect(pm.response.headers.has('x-rate-limit-reset')).to.be.true;",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Discord Webhook Lead Dispatch (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"BuzzScout Radar\",\n  \"avatar_url\": \"https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/radar.png\",\n  \"content\": \"\\ud83d\\udea8 **New Buyer Lead Alert for keyword `alternative to`**\",\n  \"embeds\": [\n    {\n      \"title\": \"\\ud83c\\udfaf HIGH Intent Lead: 'Can anyone recommend an alternative to Brand24?'\",\n      \"url\": \"https://reddit.com/r/startups/comments/test1\",\n      \"color\": 16729344,\n      \"description\": \"\\\"Looking for affordable social listening monitor under $20/mo.\\\"\",\n      \"fields\": [\n        {\n          \"name\": \"Platform\",\n          \"value\": \"Reddit (r/startups)\",\n          \"inline\": true\n        },\n        {\n          \"name\": \"Keyword\",\n          \"value\": \"`alternative to`\",\n          \"inline\": true\n        },\n        {\n          \"name\": \"Author\",\n          \"value\": \"u/founder_sarah\",\n          \"inline\": true\n        },\n        {\n          \"name\": \"\\ud83d\\udca1 Recommended Pitch\",\n          \"value\": \"```Hey! Check out BuzzScout for $5/mo real-time alerts.```\",\n          \"inline\": false\n        }\n      ],\n      \"footer\": {\n        \"text\": \"BuzzScout \\u2022 Real-time Buyer Radar\"\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{DISCORD_WEBHOOK_URL}}"
+        }
+      }
+    },
+    {
+      "name": "4. Telegram Bot API sendMessage (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"chat_id\": \"{{TEST_CHAT_ID}}\",\n  \"parse_mode\": \"HTML\",\n  \"text\": \"\\ud83c\\udfaf <b>NEW LEAD DETECTED!</b> [\\ud83d\\udd25 HIGH INTENT]\\n\\n<b>Platform:</b> \\ud83d\\udd34 Reddit (r/startups)\\n<b>Keyword:</b> <code>alternative to</code>\\n<b>Author:</b> u/founder_sarah\\n\\n<b>Post Title:</b>\\n<b>Recommend alternative to Brand24</b>\\n\\n\\ud83d\\udd17 <a href=\\\"https://reddit.com/test\\\">Click here to open and reply</a>\"\n}"
+        },
+        "url": {
+          "raw": "https://api.telegram.org/bot{{TELEGRAM_BOT_TOKEN}}/sendMessage"
+        }
+      }
+    },
+    {
+      "name": "5. Rate Limit Resilience Test (HTTP 429 Mock)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"simulate\": \"RATE_LIMIT_429\", \"retryAfter\": 2}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/channels/test"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('System safely queues and handles without uncaught exception', function () {",
+              "    pm.expect(pm.response.code).to.not.equal(500);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

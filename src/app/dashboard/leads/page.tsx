@@ -159,7 +159,7 @@ function LeadsContent() {
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-[#0c1322] border border-white/5 flex flex-wrap items-center justify-between gap-4">
+      <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0c1322] border border-white/5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
           <Filter className="w-4 h-4 text-indigo-400" />
           <span>Filters:</span>
@@ -223,7 +223,7 @@ function LeadsContent() {
           leads.map((lead) => (
             <div
               key={lead.id}
-              className={`p-6 rounded-2xl bg-[#0c1322] border transition-all ${
+              className={`p-3.5 sm:p-6 rounded-xl sm:rounded-2xl bg-[#0c1322] border transition-all ${
                 lead.status === "PITCHED"
                   ? "border-emerald-500/20 bg-[#0c1322]/60"
                   : lead.status === "DISMISSED"

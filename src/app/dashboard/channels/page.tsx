@@ -186,7 +186,7 @@ export default function ChannelsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Telegram Bot Setup */}
-        <div className="p-6 sm:p-8 rounded-2xl bg-[#0c1322] border border-white/5 space-y-6 flex flex-col justify-between">
+        <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#0c1322] border border-white/5 space-y-4 sm:space-y-6 flex flex-col justify-between">
           <div className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center space-x-3">
@@ -211,9 +211,10 @@ export default function ChannelsPage() {
 
             {/* Quick 2-Minute Guide */}
             <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 text-xs text-slate-300">
-              <span className="font-bold text-white block mb-1">⚡ How to get your Bot Token & Chat ID in 2 minutes:</span>
+              <span className="font-bold text-white block mb-1">⚡ How to get your Bot Token &amp; Chat ID in 2 minutes:</span>
               <p>1. Open Telegram, message <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-sky-400 underline font-semibold">@BotFather</a> and send <code className="bg-black/50 px-1 py-0.5 rounded text-sky-200">/newbot</code> to get your Bot Token.</p>
               <p>2. Start your bot, then message <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-sky-400 underline font-semibold">@userinfobot</a> to copy your numerical <strong>Id</strong> (Chat ID).</p>
+              <p>3. Tap <strong>START</strong> in your newly created bot so Telegram allows it to message you, then click <strong>Send Test Ping</strong> below!</p>
             </div>
 
             {telegramStatus && (
@@ -295,7 +296,7 @@ export default function ChannelsPage() {
         </div>
 
         {/* Discord Webhook Setup */}
-        <div className="p-6 sm:p-8 rounded-2xl bg-[#0c1322] border border-white/5 space-y-6 flex flex-col justify-between">
+        <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#0c1322] border border-white/5 space-y-4 sm:space-y-6 flex flex-col justify-between">
           <div className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center space-x-3">

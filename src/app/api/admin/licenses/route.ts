@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
@@ -16,7 +17,8 @@ export async function GET() {
 
     return NextResponse.json({ licenses });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }
 
@@ -27,13 +29,42 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { customCode, plan } = await req.json().catch(() => ({}));
+    const { customCode, plan, count } = await req.json().catch(() => ({}));
+    const targetPlan = plan ? plan.toUpperCase().trim() : "LTD";
+    const batchCount = Math.min(Math.max(1, parseInt(count, 10) || 1), 500);
 
-    // Generate random 16-char code if custom code not provided
+    // Bulk License Key Generation (Up to 500 keys in one click)
+    if (batchCount > 1) {
+      const keysToCreate: { code: string; plan: string; isUsed: boolean }[] = [];
+      const generatedCodes = new Set<string>();
+
+      while (generatedCodes.size < batchCount) {
+        const randomSuffix = crypto.randomBytes(4).toString("hex").toUpperCase();
+        const code = `BUZZ-${targetPlan}-${randomSuffix}`;
+        if (!generatedCodes.has(code)) {
+          generatedCodes.add(code);
+          keysToCreate.push({ code, plan: targetPlan, isUsed: false });
+        }
+      }
+
+      const created = await prisma.licenseKey.createMany({
+        data: keysToCreate,
+        skipDuplicates: true,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully generated ${created.count} license keys for plan ${targetPlan}!`,
+        count: created.count,
+        keys: keysToCreate.map((k) => k.code),
+      });
+    }
+
+    // Single Key Generation
     const randomSuffix = crypto.randomBytes(4).toString("hex").toUpperCase();
     const code = customCode && customCode.trim().length > 0
       ? customCode.trim().toUpperCase()
-      : `PULSE-LTD-${randomSuffix}`;
+      : `BUZZ-${targetPlan}-${randomSuffix}`;
 
     const existing = await prisma.licenseKey.findUnique({
       where: { code },
@@ -46,13 +77,14 @@ export async function POST(req: Request) {
     const created = await prisma.licenseKey.create({
       data: {
         code,
-        plan: plan || "LTD",
+        plan: targetPlan,
         isUsed: false,
       },
     });
 
     return NextResponse.json({ success: true, license: created });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

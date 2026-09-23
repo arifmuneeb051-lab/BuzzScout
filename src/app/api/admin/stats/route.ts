@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -12,7 +13,7 @@ export async function GET() {
     const [totalUsers, trialUsers, ltdUsers, proUsers, totalLeads, totalKeywords, totalLicenses] =
       await Promise.all([
         prisma.user.count({ where: { role: "USER" } }),
-        prisma.user.count({ where: { role: "USER", plan: "TRIAL" } }),
+        prisma.user.count({ where: { role: "USER", plan: { in: ["TRIAL", "INACTIVE"] } } }),
         prisma.user.count({ where: { role: "USER", plan: "LTD" } }),
         prisma.user.count({ where: { role: "USER", plan: "PRO" } }),
         prisma.lead.count(),
@@ -52,11 +53,12 @@ export async function GET() {
         highIntentLeadsCount,
         totalKeywords,
         totalLicenses,
-        estimatedRevenue: ltdUsers * 39 + proUsers * 9,
+        estimatedRevenue: ltdUsers * 35 + proUsers * 5,
       },
       recentUsers,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

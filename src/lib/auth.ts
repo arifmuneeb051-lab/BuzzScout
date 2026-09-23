@@ -2,16 +2,32 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
+import { isTokenRevoked } from "./token-blacklist";
 
-const JWT_SECRET = process.env.JWT_SECRET || "signalpulse-jwt-fallback-secret-2026";
-const COOKIE_NAME = "signalpulse_session";
-const ADMIN_COOKIE_NAME = "signalpulse_admin_session";
+import crypto from "crypto";
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const COOKIE_NAME = "buzzscout_session";
+const ADMIN_COOKIE_NAME = "buzzscout_admin_session";
+export const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+export const SESSION_EXPIRY = "7d";
 
 export interface SessionPayload {
   userId: string;
   email: string;
   plan: string;
+  planStatus?: string;
   role?: string;
+  avatarUrl?: string | null;
+  authProvider?: "GOOGLE" | "CREDENTIALS";
+}
+
+export function generateSecureToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+export function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -24,12 +40,19 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function signJwt(payload: SessionPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("CRITICAL: JWT_SECRET environment variable is missing.");
+  }
+  return jwt.sign(payload, secret, { expiresIn: SESSION_EXPIRY });
 }
 
 export function verifyJwt(token: string): SessionPayload | null {
+  if (!token || isTokenRevoked(token)) return null;
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
   try {
-    return jwt.verify(token, JWT_SECRET) as SessionPayload;
+    return jwt.verify(token, secret) as SessionPayload;
   } catch {
     return null;
   }
@@ -52,14 +75,35 @@ export async function getCurrentUser() {
         email: true,
         name: true,
         role: true,
+        avatarUrl: true,
+        googleId: true,
         productName: true,
         productUrl: true,
         productPitch: true,
         plan: true,
         planStatus: true,
+        emailVerified: true,
         createdAt: true,
       },
     });
+
+    if (!user) return null;
+
+    // If user has been blocked/suspended by admin, revoke session
+    if (user.role !== "ADMIN" && user.planStatus === "SUSPENDED") {
+      return null;
+    }
+
+    // Clean any legacy Master Owner suffix so user displays cleanly as a normal founder
+    if (user.name && user.name.includes("(Master Owner)")) {
+      const cleanName = user.name.replace(/\s*\(Master Owner\)/gi, "").trim() || "Muneeb";
+      user.name = cleanName;
+      // Auto-heal database record in the background
+      prisma.user.update({
+        where: { id: user.id },
+        data: { name: cleanName },
+      }).catch(() => {});
+    }
 
     return user;
   } catch (err) {
@@ -67,6 +111,8 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
+export const MASTER_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "").toLowerCase().trim();
 
 export async function getAdminUser() {
   try {
@@ -79,6 +125,11 @@ export async function getAdminUser() {
     const payload = verifyJwt(token);
     if (!payload?.userId) return null;
 
+    // STRICT REQUIREMENT: Master SuperUser MUST authenticate via Google Sign-In
+    if (payload.authProvider !== "GOOGLE") {
+      return null;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
@@ -88,11 +139,19 @@ export async function getAdminUser() {
         role: true,
         plan: true,
         planStatus: true,
+        googleId: true,
         createdAt: true,
       },
     });
 
-    if (user && user.role === "ADMIN") {
+    // Strictly enforce: Role must be ADMIN, email matches MASTER_ADMIN_EMAIL, and googleId is attached
+    if (
+      user &&
+      user.role === "ADMIN" &&
+      user.googleId &&
+      MASTER_ADMIN_EMAIL &&
+      user.email.toLowerCase().trim() === MASTER_ADMIN_EMAIL
+    ) {
       return user;
     }
     return null;

@@ -17,6 +17,8 @@ import {
   Check,
   Building,
   RefreshCw,
+  Trash2,
+  ShieldAlert,
 } from "lucide-react";
 
 interface Transaction {
@@ -31,12 +33,13 @@ interface Transaction {
 }
 
 export default function BillingPage() {
-  const [userPlan, setUserPlan] = useState<string>("TRIAL");
+  const [userPlan, setUserPlan] = useState<string>("INACTIVE");
   const [userEmail, setUserEmail] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [subscriptionNotice, setSubscriptionNotice] = useState<string | null>(null);
   
   // Checkout Modal State
-  const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<"PRO" | "LTD" | "AGENCY" | null>(null);
+  const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<"PRO" | "LTD" | null>(null);
   const [checkoutMethod, setCheckoutMethod] = useState<"CARD" | "STRIPE">("CARD");
   const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
   const [cardExp, setCardExp] = useState("12/28");
@@ -53,6 +56,35 @@ export default function BillingPage() {
 
   // Transaction History State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Account Deletion & GDPR Privacy State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError('Please type "DELETE" exactly to confirm account deletion.');
+      return;
+    }
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete account");
+      }
+      window.location.href = "/login?notice=account_deleted";
+    } catch (err: any) {
+      setDeleteError(err.message || "Failed to delete account");
+      setDeleteLoading(false);
+    }
+  };
 
   const fetchUserAndTransactions = async () => {
     try {
@@ -80,9 +112,33 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchUserAndTransactions();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("notice") === "subscription_required" || params.get("forbidden") === "1") {
+        setSubscriptionNotice(
+          "Error 403 (Forbidden): Active Plan Required. You do not have an active subscription plan. Access to dashboard services is restricted to active plan members only. Please subscribe to Pro ($5/mo) or Lifetime Pass ($25) below to unlock your dashboard."
+        );
+      }
+
+      const sessionId = params.get("session_id");
+      if (sessionId && params.get("success") === "true") {
+        fetch("/api/billing/verify-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.verified) {
+              fetchUserAndTransactions();
+            }
+          })
+          .catch(() => {});
+      }
+    }
   }, []);
 
-  const handleOpenCheckout = (plan: "PRO" | "LTD" | "AGENCY") => {
+  const handleOpenCheckout = (plan: "PRO" | "LTD") => {
     setSelectedPlanForUpgrade(plan);
     setCheckoutError(null);
     setCheckoutSuccess(null);
@@ -163,9 +219,8 @@ export default function BillingPage() {
   };
 
   const planPrices = {
-    PRO: 9,
-    LTD: 39,
-    AGENCY: 79,
+    PRO: 5,
+    LTD: 25,
   };
 
   return (
@@ -181,6 +236,21 @@ export default function BillingPage() {
         </p>
       </div>
 
+      {/* Required Subscription Warning Banner */}
+      {subscriptionNotice && (
+        <div className="p-5 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-start gap-4 shadow-xl">
+          <AlertCircle className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h3 className="font-bold text-sm sm:text-base text-amber-200">
+              Active Plan or License Key Required
+            </h3>
+            <p className="text-xs sm:text-sm text-amber-300/90 leading-relaxed">
+              {subscriptionNotice}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Current Plan Overview Card */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#121b30] to-[#0c1322] border border-indigo-500/30 shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -192,26 +262,24 @@ export default function BillingPage() {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
                 {userPlan === "LTD" 
                   ? "Lifetime Founder Pass (LTD)" 
-                  : userPlan === "AGENCY"
-                  ? "Agency Team Pass"
                   : userPlan === "PRO" 
-                  ? "Pro Monthly ($9/mo)" 
-                  : "7-Day Full Access Trial"}
+                  ? "Pro Monthly ($5/mo)" 
+                  : "Inactive (Payment Required)"}
               </h2>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  userPlan === "LTD" || userPlan === "AGENCY"
+                  userPlan === "LTD"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : userPlan === "PRO"
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                 }`}
               >
-                {userPlan === "LTD" || userPlan === "AGENCY" ? "Permanent Lifetime" : "Active Tier"}
+                {userPlan === "LTD" ? "Permanent Lifetime" : userPlan === "PRO" ? "Active Tier" : "Payment Required"}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-medium">
-              Registered email: <span className="text-slate-200 font-mono">{userEmail || "user@signalpulse.io"}</span>
+              Registered email: <span className="text-slate-200 font-mono">{userEmail || "user@buzzscout.io"}</span>
             </p>
           </div>
 
@@ -227,6 +295,19 @@ export default function BillingPage() {
         </div>
       </div>
 
+      {/* Inactive Account Activation Banner */}
+      {userPlan === "INACTIVE" && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs sm:text-sm flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-amber-300">Active Paid Plan Required</h4>
+            <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
+              Your account is currently pending payment. Choose a plan below (Pro Monthly $5/mo or Lifetime Pass $25) to activate Reddit & X lead monitoring and instant alerts.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Plan Selection Grid */}
       <div className="space-y-4">
         <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
@@ -234,7 +315,7 @@ export default function BillingPage() {
           Choose Your Plan & Pay
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Plan 1: Pro Monthly */}
           <div className="p-6 rounded-3xl bg-[#0b101d]/90 border border-slate-800 flex flex-col justify-between space-y-6 hover:border-slate-700 transition-colors">
             <div className="space-y-4">
@@ -244,7 +325,7 @@ export default function BillingPage() {
               <div>
                 <h4 className="text-xl font-bold text-white">Pro Monthly</h4>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-white">$9</span>
+                  <span className="text-4xl font-extrabold text-white">$5</span>
                   <span className="text-xs text-slate-400">/ month</span>
                 </div>
               </div>
@@ -272,7 +353,7 @@ export default function BillingPage() {
               disabled={userPlan === "PRO"}
               className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors border border-slate-700 disabled:opacity-50"
             >
-              {userPlan === "PRO" ? "Currently Active" : "Subscribe $9/Month"}
+              {userPlan === "PRO" ? "Currently Active" : "Subscribe $5/Month"}
             </button>
           </div>
 
@@ -288,7 +369,7 @@ export default function BillingPage() {
               <div>
                 <h4 className="text-xl font-extrabold text-white">Lifetime Founder Pass</h4>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-5xl font-extrabold text-white">$39</span>
+                  <span className="text-5xl font-extrabold text-white">$25</span>
                   <span className="text-xs text-indigo-300">one-time payment</span>
                 </div>
               </div>
@@ -317,44 +398,7 @@ export default function BillingPage() {
               className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/40 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>{userPlan === "LTD" ? "Founder Pass Active" : "Get Lifetime Access ($39)"}</span>
-            </button>
-          </div>
-
-          {/* Plan 3: Agency Pass */}
-          <div className="p-6 rounded-3xl bg-[#0b101d]/90 border border-slate-800 flex flex-col justify-between space-y-6 hover:border-slate-700 transition-colors">
-            <div className="space-y-4">
-              <span className="text-xs font-mono font-bold text-purple-400 uppercase tracking-wide">
-                Agencies & Power Users
-              </span>
-              <div>
-                <h4 className="text-xl font-bold text-white">Agency License</h4>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-white">$79</span>
-                  <span className="text-xs text-slate-400">/ lifetime</span>
-                </div>
-              </div>
-              <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Everything in Lifetime Pass</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Multi-brand profiles for clients</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Multiple Discord/Telegram webhooks</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleOpenCheckout("AGENCY")}
-              disabled={userPlan === "AGENCY"}
-              className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors border border-slate-700 disabled:opacity-50"
-            >
-              {userPlan === "AGENCY" ? "Agency Tier Active" : "Get Agency Pass ($79)"}
+              <span>{userPlan === "LTD" ? "Founder Pass Active" : "Get Lifetime Access ($25)"}</span>
             </button>
           </div>
         </div>
@@ -376,7 +420,7 @@ export default function BillingPage() {
                 Secure Checkout
               </span>
               <h3 className="text-xl font-extrabold text-white">
-                Upgrade to {selectedPlanForUpgrade === "LTD" ? "Lifetime Founder Pass" : selectedPlanForUpgrade === "AGENCY" ? "Agency Pass" : "Pro Monthly"}
+                Upgrade to {selectedPlanForUpgrade === "LTD" ? "Lifetime Founder Pass" : "Pro Monthly"}
               </h3>
               <p className="text-xs text-slate-400">
                 Total due: <span className="text-white font-bold text-sm">${planPrices[selectedPlanForUpgrade]} USD</span>
@@ -530,7 +574,7 @@ export default function BillingPage() {
 
         {transactions.length === 0 ? (
           <p className="text-xs text-slate-400 italic">
-            No previous payments recorded yet. Active trial or promo tier.
+            No previous payments recorded yet. Choose a plan above to activate your subscription.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -615,6 +659,99 @@ export default function BillingPage() {
           </button>
         </form>
       </div>
+
+      {/* Danger Zone: GDPR Privacy & Data Deletion */}
+      <div className="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-500" />
+              Privacy & Data Control (Danger Zone)
+            </h3>
+            <p className="text-xs text-slate-400 max-w-xl">
+              GDPR Right-to-be-Forgotten: Permanently erase your account, all monitored keywords, detected leads, alert webhook tokens, and session cookies from BuzzScout servers.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowDeleteModal(true);
+              setDeleteConfirmText("");
+              setDeleteError(null);
+            }}
+            className="px-5 py-2.5 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Account & Wipe Data
+          </button>
+        </div>
+      </div>
+
+      {/* Account Deletion Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0c1220] border border-rose-900/50 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-extrabold text-white">
+                Permanently Delete Account?
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                This action is <span className="text-rose-400 font-bold">irreversible</span>. In accordance with GDPR privacy compliance, your profile, active keywords, collected buyer leads, and alert channel webhooks will be immediately and permanently purged from the database.
+              </p>
+            </div>
+
+            {deleteError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleDeleteAccount} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Type <span className="font-mono text-rose-400 font-bold">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  {deleteLoading ? "Wiping Data..." : "Delete Permanently"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

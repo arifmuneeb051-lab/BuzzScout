@@ -1,12 +1,13 @@
-// SignalPulse Platform Prisma Database Schema
+// BuzzScout Platform Prisma Database Schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -18,11 +19,20 @@ model User {
   productName  String?        @default("My Product")
   productUrl   String?        @default("https://myproduct.io")
   productPitch String?        @default("An affordable and fast modern solution for founders.")
-  plan         String         @default("TRIAL") // TRIAL, PRO, LTD
-  planStatus   String         @default("ACTIVE") // ACTIVE, SUSPENDED
-  trialEndsAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  plan         String         @default("INACTIVE") // INACTIVE, PRO, LTD, AGENCY
+  planStatus   String         @default("PENDING_PAYMENT") // PENDING_PAYMENT, ACTIVE, SUSPENDED
+  avatarUrl    String?
+  googleId     String?
+  trialEndsAt              DateTime?
+  emailVerified            Boolean        @default(false)
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  failedLoginAttempts      Int            @default(0)
+  lockoutUntil             DateTime?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
 
   keywords     Keyword[]
   leads        Lead[]
@@ -77,6 +87,8 @@ model AlertChannel {
   telegramChatId    String?
   discordWebhookUrl String?
   active            Boolean  @default(true)
+  lastError         String?
+  errorCount        Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -95,14 +107,21 @@ model SiteConfig {
   id                    String   @id @default("default")
   heroHeadline          String   @default("Turn Reddit & X Conversations Into Paying Customers on Autopilot.")
   heroSubtitle          String   @default("Monitor high-intent phrases like 'looking for alternative to X' or 'recommend tool for Y'. Get instant alerts on Telegram & Discord with ready-to-pitch AI replies in under 60 seconds.")
-  announcementText      String   @default("Stop paying $100+/month for legacy enterprise monitors — Claim $39 Lifetime Access")
+  announcementText      String   @default("Stop paying $100+/month for legacy enterprise monitors — Claim $35 Lifetime Access")
+  ctaButtonText         String   @default("Launch Radar")
+  telegramBotUrl        String?  @default("https://t.me/BotFather")
+  telegramBotToken      String?
+  supportEmail          String?  @default("support@buzzscout.io")
   trialDays             Int      @default(7)
-  monthlyPrice          Int      @default(9)
-  ltdPrice              Int      @default(39)
+  monthlyPrice          Int      @default(5)
+  ltdPrice              Int      @default(25)
   agencyPrice           Int      @default(79)
   stripeSecretKey       String?
   stripePublishableKey  String?
   stripePaymentLink     String?
+  stripeMonthlyLink     String?
+  stripeLtdLink         String?
+  stripeAgencyLink      String?
   stripeWebhookSecret   String?
   paymentMode           String   @default("TEST") // LIVE, TEST
   updatedAt             DateTime @updatedAt
@@ -121,4 +140,27 @@ model PaymentTransaction {
   cardLast4       String?
   createdAt       DateTime @default(now())
 }
+
+model SecurityAlert {
+  id              String   @id @default(cuid())
+  ipAddress       String
+  userAgent       String?
+  attemptedEmail  String
+  eventType       String   // UNAUTHORIZED_ADMIN_ATTEMPT, BRUTE_FORCE_BLOCKED, TAMPER_PROBE
+  severity        String   @default("HIGH") // MEDIUM, HIGH, CRITICAL
+  details         String?
+  resolved        Boolean  @default(false)
+  ipBlocked       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model BlockedIp {
+  id        String   @id @default(cuid())
+  ipAddress String   @unique
+  reason    String?
+  blockedBy String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}
+
+
 

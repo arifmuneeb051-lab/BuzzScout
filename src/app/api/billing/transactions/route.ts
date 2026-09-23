@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { formatSafeError } from "@/lib/security";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -7,6 +8,16 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Auto-clean any dummy or zero-dollar test transaction for unpaid/pending accounts
+    if (user.role !== "ADMIN" && user.planStatus !== "ACTIVE") {
+      await prisma.paymentTransaction.deleteMany({
+        where: {
+          userEmail: user.email,
+          amount: 0,
+        },
+      });
     }
 
     const transactions = await prisma.paymentTransaction.findMany({
@@ -19,8 +30,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, transactions });
+    // If user has not completed an active payment, do not display fake completed transactions
+    const safeTransactions = (user.role !== "ADMIN" && user.planStatus !== "ACTIVE")
+      ? []
+      : transactions.filter((t) => t.amount > 0 || user.planStatus === "ACTIVE");
+
+    return NextResponse.json({ success: true, transactions: safeTransactions });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
   }
 }

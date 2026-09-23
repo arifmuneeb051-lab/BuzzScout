@@ -23,15 +23,37 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isLoginPage = pathname === "/admin/login";
+  const [verifying, setVerifying] = useState(true);
 
-  if (isLoginPage) {
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (!res.ok) {
+          router.replace("/dashboard");
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (
+          !data?.user ||
+          data.user.email?.toLowerCase().trim() !== "arifmuneeb81@gmail.com" ||
+          !data.user.googleId
+        ) {
+          router.replace("/dashboard");
+        } else {
+          setVerifying(false);
+        }
+      })
+      .catch(() => router.replace("/dashboard"));
+  }, [router]);
 
   const handleAdminLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
+    await Promise.all([
+      fetch("/api/admin/logout", { method: "POST" }),
+      fetch("/api/auth/logout", { method: "POST" }),
+    ]);
+    router.push("/dashboard");
   };
 
   const navItems = [
@@ -40,6 +62,14 @@ export default function AdminLayout({
     { href: "/admin/settings", label: "Frontend Site Config (CMS)", icon: Sliders },
     { href: "/admin/licenses", label: "License Key Manager", icon: Key },
   ];
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-[#07090e] flex items-center justify-center font-mono text-xs text-slate-500">
+        Authenticating master clearance...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 flex selection:bg-amber-500/30 selection:text-amber-200">
@@ -54,7 +84,7 @@ export default function AdminLayout({
               </div>
               <div>
                 <span className="font-extrabold text-base text-white tracking-tight block">
-                  SignalPulse
+                  BuzzScout
                 </span>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 block font-bold">
                   Admin Command

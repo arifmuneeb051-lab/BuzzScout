@@ -7,6 +7,7 @@ import { analyzeIntent } from "@/lib/intent-analyzer";
 import { generatePitchTemplates } from "@/lib/ai/pitch-generator";
 import { sendTelegramAlert } from "@/lib/notifications/telegram";
 import { sendDiscordAlert } from "@/lib/notifications/discord";
+import { sanitizeError } from "@/lib/security";
 
 export async function GET(req: Request) {
   return handleMonitoringScan(req);
@@ -21,18 +22,24 @@ async function handleMonitoringScan(req: Request) {
     const { searchParams } = new URL(req.url);
     const secret = searchParams.get("secret");
     const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "signalpulse_cron_secret_token_9988";
+    const cronSecret = process.env.CRON_SECRET;
 
     let targetUserId: string | null = null;
 
     // Check if triggered by an authenticated logged-in user
     const loggedInUser = await getCurrentUser();
     if (loggedInUser) {
+      if (loggedInUser.role !== "ADMIN" && loggedInUser.planStatus !== "ACTIVE") {
+        return NextResponse.json(
+          { error: "Error 403 Forbidden: Active subscription plan required to run radar scan." },
+          { status: 403 }
+        );
+      }
       targetUserId = loggedInUser.id;
     } else {
       // Validate cron secret if not logged in
-      const isBearerValid = authHeader === `Bearer ${cronSecret}`;
-      const isSecretValid = secret === cronSecret;
+      const isBearerValid = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
+      const isSecretValid = Boolean(cronSecret && secret === cronSecret);
 
       if (!isBearerValid && !isSecretValid) {
         return NextResponse.json({ error: "Unauthorized cron execution" }, { status: 401 });
@@ -58,6 +65,9 @@ async function handleMonitoringScan(req: Request) {
 
     let totalDiscovered = 0;
     let alertsSent = 0;
+
+    const siteConfig = await prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null);
+    const platformBotToken = siteConfig?.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
 
     for (const kw of keywords) {
       const phrase = kw.phrase;
@@ -169,9 +179,11 @@ async function handleMonitoringScan(req: Request) {
 
         // 4. Dispatch instant alerts to configured channels
         for (const ch of user.channels) {
-          if (ch.type === "TELEGRAM" && ch.telegramBotToken && ch.telegramChatId) {
+          const activeBotToken = ch.telegramBotToken || platformBotToken;
+          if (ch.type === "TELEGRAM" && activeBotToken && ch.telegramChatId) {
             sendTelegramAlert({
-              botToken: ch.telegramBotToken,
+              channelId: ch.id,
+              botToken: activeBotToken,
               chatId: ch.telegramChatId,
               lead: {
                 platform: lead.platform,
@@ -190,6 +202,7 @@ async function handleMonitoringScan(req: Request) {
 
           if (ch.type === "DISCORD" && ch.discordWebhookUrl) {
             sendDiscordAlert({
+              channelId: ch.id,
               webhookUrl: ch.discordWebhookUrl,
               lead: {
                 platform: lead.platform,
@@ -218,6 +231,6 @@ async function handleMonitoringScan(req: Request) {
     });
   } catch (err: any) {
     console.error("Monitoring scan error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(err) }, { status: 500 });
   }
 }

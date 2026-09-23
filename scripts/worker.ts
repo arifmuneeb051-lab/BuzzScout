@@ -1,14 +1,18 @@
 /**
- * Standalone Background Monitoring Worker for SignalPulse
+ * Standalone Background Monitoring Worker for BuzzScout
  * Usage: npm run worker
  */
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const CRON_SECRET = process.env.CRON_SECRET || "signalpulse_cron_secret_token_9988";
+const CRON_SECRET = process.env.CRON_SECRET;
+if (!CRON_SECRET) {
+  console.error("❌ CRON_SECRET environment variable is missing. Worker aborted.");
+  process.exit(1);
+}
 const INTERVAL_MS = 1000 * 60 * 5; // Every 5 minutes
 
 async function runMonitorCycle() {
-  console.log(`[${new Date().toISOString()}] 🔍 Starting SignalPulse radar scan...`);
+  console.log(`[${new Date().toISOString()}] 🔍 Starting BuzzScout radar scan...`);
   try {
     const res = await fetch(`${APP_URL}/api/cron/monitor`, {
       method: "POST",
@@ -31,7 +35,7 @@ async function runMonitorCycle() {
   }
 }
 
-console.log("🚀 SignalPulse Background Worker active.");
+console.log("🚀 BuzzScout Background Worker active.");
 console.log(`📡 Polling ${APP_URL}/api/cron/monitor every 5 minutes.`);
 
 // Initial run

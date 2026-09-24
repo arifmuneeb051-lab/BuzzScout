@@ -301,33 +301,6 @@ export default function DashboardLayout({
               <RefreshCw className={`w-3.5 h-3.5 ${scanning ? "animate-spin" : ""}`} />
               <span>{scanning ? "Scanning Social..." : "Scan Radar Now"}</span>
             </button>
-            <Link
-              href="/"
-              target="_blank"
-              className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
-            >
-              <span>Landing</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-
-            {user && (
-              <div className="flex items-center gap-2 pl-3 border-l border-white/10">
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.name || "User Avatar"}
-                    className="w-7 h-7 rounded-full object-cover ring-2 ring-indigo-500/50 shrink-0"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-                    {(user.name || user.email || "F").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="text-xs font-semibold text-slate-200 hidden sm:inline max-w-[120px] truncate">
-                  {user.name || user.email}
-                </span>
-              </div>
-            )}
           </div>
         </header>
 

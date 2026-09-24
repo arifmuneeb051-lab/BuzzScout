@@ -115,6 +115,7 @@ model SiteConfig {
   trialDays             Int      @default(7)
   monthlyPrice          Int      @default(5)
   ltdPrice              Int      @default(25)
+  ltdOfferActive        Boolean  @default(true)
   agencyPrice           Int      @default(79)
   stripeSecretKey       String?
   stripePublishableKey  String?

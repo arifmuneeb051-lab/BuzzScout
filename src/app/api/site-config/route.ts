@@ -27,6 +27,7 @@ export async function GET() {
           supportEmail: "support@buzzscout.io",
           monthlyPrice: 5,
           ltdPrice: 25,
+          ltdOfferActive: true,
           agencyPrice: 79,
         },
         { headers }
@@ -46,6 +47,7 @@ export async function GET() {
         supportEmail: "support@buzzscout.io",
         monthlyPrice: 5,
         ltdPrice: 25,
+        ltdOfferActive: true,
         agencyPrice: 79,
       },
       { status: 200, headers }

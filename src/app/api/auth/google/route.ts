@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { formatSafeError } from "@/lib/security";
 
 export async function GET(req: Request) {
-  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/google/callback`;
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const callbackUrl = `${baseUrl}/api/auth/google/callback`;
   const clientId = process.env.GOOGLE_CLIENT_ID;
 
   // 1. Official Google OAuth: If Google Client ID is configured in .env, redirect directly to Google's official consent server
@@ -21,7 +22,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/google/callback`;
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const callbackUrl = `${baseUrl}/api/auth/google/callback`;
     const clientId = process.env.GOOGLE_CLIENT_ID;
 
     if (clientId && clientId.trim().length > 0 && !clientId.includes("YOUR_GOOGLE_CLIENT_ID")) {

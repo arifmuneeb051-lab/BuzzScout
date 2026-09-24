@@ -21,6 +21,31 @@ export async function POST() {
   return response;
 }
 
+export async function PATCH(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const body = await req.json();
+    const { name, productName, productUrl, productPitch } = body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: name !== undefined ? name : undefined,
+        productName: productName !== undefined ? productName : undefined,
+        productUrl: productUrl !== undefined ? productUrl : undefined,
+        productPitch: productPitch !== undefined ? productPitch : undefined,
+      },
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (err: any) {
+    return NextResponse.json({ error: sanitizeError(err) }, { status: 500 });
+  }
+}
+
+
 export async function DELETE() {
   const user = await getCurrentUser();
   if (!user) {

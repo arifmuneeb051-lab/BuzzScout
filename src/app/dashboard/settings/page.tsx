@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, Settings as SettingsIcon, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { User, Settings as SettingsIcon, Save, AlertTriangle, CheckCircle2, MessageSquare, Zap, AlertCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
@@ -16,24 +16,39 @@ export default function SettingsPage() {
     productPitch: "",
   });
 
+  // Discord State
+  const [discordUrl, setDiscordUrl] = useState("");
+  const [discordActive, setDiscordActive] = useState(true);
+  const [discordStatus, setDiscordStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [discordTesting, setDiscordTesting] = useState(false);
+  const [discordSaving, setDiscordSaving] = useState(false);
+
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.user) {
-          setUser(data.user);
-          setFormData({
-            name: data.user.name || "",
-            productName: data.user.productName || "",
-            productUrl: data.user.productUrl || "",
-            productPitch: data.user.productPitch || "",
-          });
+    Promise.all([
+      fetch("/api/auth/me").then(res => res.json()),
+      fetch("/api/channels").then(res => res.json())
+    ]).then(([userData, channelsData]) => {
+      if (userData?.user) {
+        setUser(userData.user);
+        setFormData({
+          name: userData.user.name || "",
+          productName: userData.user.productName || "",
+          productUrl: userData.user.productUrl || "",
+          productPitch: userData.user.productPitch || "",
+        });
+      }
+      
+      if (channelsData?.channels) {
+        const dc = channelsData.channels.find((c: any) => c.type === "DISCORD");
+        if (dc) {
+          setDiscordUrl(dc.discordWebhookUrl || "");
+          setDiscordActive(dc.active);
         }
-      })
-      .finally(() => setLoading(false));
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
@@ -59,12 +74,66 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveDiscord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDiscordSaving(true);
+    setDiscordStatus(null);
+    try {
+      const res = await fetch("/api/channels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "DISCORD",
+          discordWebhookUrl: discordUrl,
+          active: discordActive,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDiscordStatus({ type: "success", text: "Discord webhook saved successfully!" });
+      } else {
+        setDiscordStatus({ type: "error", text: data.error || "Failed to save Discord webhook" });
+      }
+    } catch {
+      setDiscordStatus({ type: "error", text: "Network error saving Discord webhook" });
+    } finally {
+      setDiscordSaving(false);
+      setTimeout(() => setDiscordStatus(null), 4000);
+    }
+  };
+
+  const handleTestDiscord = async () => {
+    setDiscordTesting(true);
+    setDiscordStatus(null);
+    try {
+      const res = await fetch("/api/channels/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "DISCORD",
+          webhookUrl: discordUrl,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDiscordStatus({ type: "success", text: "Test embed card successfully posted in your Discord channel!" });
+      } else {
+        setDiscordStatus({ type: "error", text: data.message || "Failed to deliver Discord test. Please check the webhook URL." });
+      }
+    } catch {
+      setDiscordStatus({ type: "error", text: "Network error testing Discord connection." });
+    } finally {
+      setDiscordTesting(false);
+      setTimeout(() => setDiscordStatus(null), 4000);
+    }
+  };
+
   if (loading) {
     return <div className="p-12 text-center text-slate-500 text-sm">Loading settings...</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
@@ -72,12 +141,12 @@ export default function SettingsPage() {
             Account Settings
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Manage your personal profile and product details for the AI Pitch Engine.
+            Manage your personal profile, product details, and alert integrations.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6 max-w-3xl">
+      <form onSubmit={handleSaveProfile} className="space-y-6 max-w-3xl">
         <div className="p-6 rounded-2xl bg-[#0c1322] border border-white/5 space-y-6">
           <div className="flex items-center gap-4 border-b border-white/5 pb-4">
             <div className="h-12 w-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
@@ -157,7 +226,7 @@ export default function SettingsPage() {
             className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/20 transition-all flex items-center gap-2 disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save Settings"}
+            {saving ? "Saving..." : "Save Profile"}
           </button>
         </div>
       </form>
@@ -165,9 +234,9 @@ export default function SettingsPage() {
       {/* Telegram Integration Section */}
       <div className="max-w-3xl pt-6">
         <div className="p-6 rounded-2xl bg-[#0c1322] border border-sky-500/20 space-y-6 shadow-lg shadow-sky-900/10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-[#229ed9]/15 border border-[#229ed9]/30 flex items-center justify-center text-[#229ed9] shrink-0">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
               </div>
               <div>
@@ -204,6 +273,98 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Discord Integration Section */}
+      <div className="max-w-3xl pt-2">
+        <form onSubmit={handleSaveDiscord} className="p-6 rounded-2xl bg-[#0c1322] border border-indigo-500/20 space-y-6 shadow-lg shadow-indigo-900/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-[#5865f2]/15 border border-[#5865f2]/30 flex items-center justify-center text-[#5865f2] shrink-0">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Discord Webhook</h3>
+                <p className="text-xs text-slate-400">Team channel lead embeds.</p>
+              </div>
+            </div>
+            <span
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                discordUrl && discordActive
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-slate-800 text-slate-400"
+              }`}
+            >
+              {discordUrl && discordActive ? "Connected" : "Not Configured"}
+            </span>
+          </div>
+
+          {discordStatus && (
+            <div
+              className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                discordStatus.type === "success"
+                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
+                  : "bg-rose-500/10 border border-rose-500/20 text-rose-300"
+              }`}
+            >
+              {discordStatus.type === "success" ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{discordStatus.text}</span>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Discord Webhook URL
+              </label>
+              <input
+                type="url"
+                value={discordUrl}
+                onChange={(e) => setDiscordUrl(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/12345678/abcde..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="dcActive"
+                checked={discordActive}
+                onChange={(e) => setDiscordActive(e.target.checked)}
+                className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="dcActive" className="text-xs text-slate-300 select-none cursor-pointer">
+                Enable Discord Alerts
+              </label>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleTestDiscord}
+              disabled={discordTesting || !discordUrl}
+              className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-semibold text-xs border border-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>{discordTesting ? "Sending..." : "Test Ping"}</span>
+            </button>
+            <button
+              type="submit"
+              disabled={discordSaving}
+              className="py-2 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{discordSaving ? "Saving..." : "Save Webhook"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
     </div>
   );
 }

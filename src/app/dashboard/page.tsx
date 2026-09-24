@@ -331,10 +331,10 @@ export default function DashboardOverview() {
             </div>
           </div>
           <Link
-            href="/dashboard/channels"
+            href="/dashboard/settings"
             className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shrink-0 transition-colors"
           >
-            Connect Channels &rarr;
+            Connect Alerts &rarr;
           </Link>
         </div>
       )}

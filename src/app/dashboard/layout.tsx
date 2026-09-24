@@ -170,7 +170,6 @@ export default function DashboardLayout({
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard, requiresPlan: true },
     { href: "/dashboard/keywords", label: "Tracked Keywords", icon: Tag, requiresPlan: true },
     { href: "/dashboard/leads", label: "Leads Feed & Pitch", icon: Flame, requiresPlan: true },
-    { href: "/dashboard/channels", label: "Alert Channels", icon: Bell, requiresPlan: true },
     { href: "/dashboard/billing", label: "Billing & LTD", icon: CreditCard, requiresPlan: false },
     { href: "/dashboard/settings", label: "Settings", icon: Settings, requiresPlan: false },
   ];

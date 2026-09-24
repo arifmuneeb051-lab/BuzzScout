@@ -23,6 +23,10 @@ export default function SettingsPage() {
   const [discordTesting, setDiscordTesting] = useState(false);
   const [discordSaving, setDiscordSaving] = useState(false);
 
+  // Telegram State
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [telegramActive, setTelegramActive] = useState(false);
+
   useEffect(() => {
     Promise.all([
       fetch("/api/auth/me").then(res => res.json()),
@@ -39,6 +43,12 @@ export default function SettingsPage() {
       }
       
       if (channelsData?.channels) {
+        const tg = channelsData.channels.find((c: any) => c.type === "TELEGRAM");
+        if (tg) {
+          setTelegramChatId(tg.telegramChatId || "");
+          setTelegramActive(tg.active);
+        }
+        
         const dc = channelsData.channels.find((c: any) => c.type === "DISCORD");
         if (dc) {
           setDiscordUrl(dc.discordWebhookUrl || "");
@@ -240,21 +250,35 @@ export default function SettingsPage() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Telegram Alerts (1-Click Connect)</h3>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Telegram Alerts (1-Click Connect)
+                </h3>
                 <p className="text-xs text-slate-400">Receive instant push notifications on your phone.</p>
               </div>
             </div>
             
-            {/* 1-Click Connect Button */}
-            <a
-              href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'BuzzScoutBot'}?start=${user?.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-              Connect Telegram
-            </a>
+            <div className="flex items-center gap-3 shrink-0">
+              <span
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                  telegramChatId && telegramActive
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "bg-slate-800 text-slate-400 border border-slate-700"
+                }`}
+              >
+                {telegramChatId && telegramActive ? "Connected" : "Not Configured"}
+              </span>
+              
+              {/* 1-Click Connect Button */}
+              <a
+                href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'BuzzScoutBot'}?start=${user?.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                {telegramChatId ? "Re-Connect" : "Connect"}
+              </a>
+            </div>
           </div>
 
           <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

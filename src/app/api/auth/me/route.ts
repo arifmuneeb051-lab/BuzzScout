@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, COOKIE_NAME, ADMIN_COOKIE_NAME, MASTER_ADMIN_EMAIL } from "@/lib/auth";
+import { getCurrentUser, COOKIE_NAME, ADMIN_COOKIE_NAME, MASTER_ADMIN_EMAIL, verifyPassword, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sanitizeError } from "@/lib/security";
 
@@ -27,16 +27,33 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, productName, productUrl, productPitch } = body;
+    const { name, productName, productUrl, productPitch, oldPassword, newPassword } = body;
+
+    const dataToUpdate: any = {
+      name: name !== undefined ? name : undefined,
+      productName: productName !== undefined ? productName : undefined,
+      productUrl: productUrl !== undefined ? productUrl : undefined,
+      productPitch: productPitch !== undefined ? productPitch : undefined,
+    };
+
+    if (oldPassword && newPassword) {
+      // Find full user object with password hash
+      const fullUser = await prisma.user.findUnique({ where: { id: user.id } });
+      if (!fullUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+      // Verify old password
+      const isValid = await verifyPassword(oldPassword, fullUser.password);
+      if (!isValid) {
+        return NextResponse.json({ error: "Incorrect current password." }, { status: 403 });
+      }
+
+      // Hash and set new password
+      dataToUpdate.password = await hashPassword(newPassword);
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: {
-        name: name !== undefined ? name : undefined,
-        productName: productName !== undefined ? productName : undefined,
-        productUrl: productUrl !== undefined ? productUrl : undefined,
-        productPitch: productPitch !== undefined ? productPitch : undefined,
-      },
+      data: dataToUpdate,
     });
 
     return NextResponse.json({ success: true, user: updatedUser });

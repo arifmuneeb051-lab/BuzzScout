@@ -14,6 +14,8 @@ export default function SettingsPage() {
     productName: "",
     productUrl: "",
     productPitch: "",
+    oldPassword: "",
+    newPassword: "",
   });
 
   // Discord State
@@ -240,6 +242,72 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* Security / Password Section */}
+      <div className="max-w-3xl pt-6">
+        <form onSubmit={handleSaveProfile} className="p-6 rounded-2xl bg-[#0c1322] border border-white/5 space-y-6">
+          <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+            <div className="h-12 w-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Security</h3>
+              <p className="text-xs text-slate-400">Manage your account password.</p>
+            </div>
+          </div>
+
+          {user?.googleId ? (
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs sm:text-sm">
+              <p>You are logged in via <strong>Google</strong>. No password is required for your account.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={formData.oldPassword || ""}
+                  onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={formData.newPassword || ""}
+                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              {message && (
+                <div className={`p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 border ${
+                  message.type === "success"
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                    : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                }`}>
+                  {message.type === "success" ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                  {message.text}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={saving || !formData.oldPassword || !formData.newPassword}
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? "Saving..." : "Update Password"}
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
 
       {/* Telegram Integration Section */}
       <div className="max-w-3xl pt-6">

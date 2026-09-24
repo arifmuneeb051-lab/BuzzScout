@@ -41,6 +41,8 @@ export default function SettingsPage() {
           productName: userData.user.productName || "",
           productUrl: userData.user.productUrl || "",
           productPitch: userData.user.productPitch || "",
+          oldPassword: "",
+          newPassword: "",
         });
       }
       

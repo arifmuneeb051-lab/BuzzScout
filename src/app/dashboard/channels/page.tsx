@@ -185,7 +185,6 @@ export default function ChannelsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Telegram Bot Setup */}
         <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#0c1322] border border-white/5 space-y-4 sm:space-y-6 flex flex-col justify-between">
           <div className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -200,98 +199,29 @@ export default function ChannelsPage() {
               </div>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  telegramToken && telegramChatId && telegramActive
+                  telegramChatId && telegramActive
                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                     : "bg-slate-800 text-slate-400"
                 }`}
               >
-                {telegramToken && telegramChatId && telegramActive ? "Connected" : "Not Configured"}
+                {telegramChatId && telegramActive ? "Connected" : "Not Configured"}
               </span>
             </div>
 
-            {/* Quick 2-Minute Guide */}
+            {/* Quick 1-Click Connect Guide */}
             <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 text-xs text-slate-300">
-              <span className="font-bold text-white block mb-1">⚡ How to get your Bot Token &amp; Chat ID in 2 minutes:</span>
-              <p>1. Open Telegram, message <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-sky-400 underline font-semibold">@BotFather</a> and send <code className="bg-black/50 px-1 py-0.5 rounded text-sky-200">/newbot</code> to get your Bot Token.</p>
-              <p>2. Start your bot, then message <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-sky-400 underline font-semibold">@userinfobot</a> to copy your numerical <strong>Id</strong> (Chat ID).</p>
-              <p>3. Tap <strong>START</strong> in your newly created bot so Telegram allows it to message you, then click <strong>Send Test Ping</strong> below!</p>
+              <p>Telegram Alerts have been moved to the <a href="/dashboard/settings" className="text-sky-400 underline font-semibold">User Settings</a> page.</p>
+              <p>We now use a simple 1-Click connect process. You no longer need to create your own bot.</p>
             </div>
-
-            {telegramStatus && (
-              <div
-                className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                  telegramStatus.type === "success"
-                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
-                    : "bg-rose-500/10 border border-rose-500/20 text-rose-300"
-                }`}
+            
+            <div className="flex justify-start pt-2">
+              <a
+                href="/dashboard/settings"
+                className="py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-md transition-colors"
               >
-                {telegramStatus.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                )}
-                <span>{telegramStatus.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveTelegram} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Telegram Bot Token
-                </label>
-                <input
-                  type="text"
-                  value={telegramToken}
-                  onChange={(e) => setTelegramToken(e.target.value)}
-                  placeholder="e.g. 7481928491:AAHkL78w..."
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Your Telegram Chat ID
-                </label>
-                <input
-                  type="text"
-                  value={telegramChatId}
-                  onChange={(e) => setTelegramChatId(e.target.value)}
-                  placeholder="e.g. 192837465"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="tgActive"
-                  checked={telegramActive}
-                  onChange={(e) => setTelegramActive(e.target.checked)}
-                  className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="tgActive" className="text-xs text-slate-300 select-none">
-                  Enable Telegram Notifications
-                </label>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md transition-colors"
-                >
-                  Save Telegram Settings
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTestTelegram}
-                  disabled={telegramTesting || !telegramToken || !telegramChatId}
-                  className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-semibold text-xs border border-slate-700 transition-colors flex items-center gap-1.5"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{telegramTesting ? "Sending..." : "Test Ping"}</span>
-                </button>
-              </div>
-            </form>
+                Go to Settings to Connect Telegram
+              </a>
+            </div>
           </div>
         </div>
 

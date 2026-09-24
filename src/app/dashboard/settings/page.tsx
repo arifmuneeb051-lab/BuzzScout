@@ -161,6 +161,49 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* Telegram Integration Section */}
+      <div className="max-w-3xl pt-6">
+        <div className="p-6 rounded-2xl bg-[#0c1322] border border-sky-500/20 space-y-6 shadow-lg shadow-sky-900/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Telegram Alerts (1-Click Connect)</h3>
+                <p className="text-xs text-slate-400">Receive instant push notifications on your phone.</p>
+              </div>
+            </div>
+            
+            {/* 1-Click Connect Button */}
+            <a
+              href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'BuzzScoutBot'}?start=${user?.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 shrink-0"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              Connect Telegram
+            </a>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
+              <p className="text-slate-300 mt-0.5">
+                Click the <strong>Connect Telegram</strong> button above.
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
+              <p className="text-slate-300 mt-0.5">
+                Click <strong>START</strong> in the bot, and you're done!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,8 @@ export interface RedditPost {
   numComments: number;
 }
 
+const MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 Days maximum age
+
 export async function searchReddit(query: string, subreddit?: string | null): Promise<RedditPost[]> {
   try {
     const encodedQuery = encodeURIComponent(query);
@@ -18,15 +20,14 @@ export async function searchReddit(query: string, subreddit?: string | null): Pr
 
     if (subreddit && subreddit.trim().length > 0) {
       const cleanSub = subreddit.trim().replace(/^r\//, "");
-      targetUrl = `https://www.reddit.com/r/${cleanSub}/search.json?q=${encodedQuery}&restrict_sr=1&sort=new&limit=20`;
+      targetUrl = `https://www.reddit.com/r/${cleanSub}/search.json?q=${encodedQuery}&restrict_sr=1&sort=new&limit=25`;
     } else {
       targetUrl = `https://www.reddit.com/search.json?q=${encodedQuery}&sort=new&limit=25`;
     }
 
     const res = await fetch(targetUrl, {
       headers: {
-        // Reddit requires a descriptive User-Agent to prevent 429
-        "User-Agent": "web:buzzscout-radar-engine:v1.0.0 (by /u/buzzscout_bot)",
+        "User-Agent": "web:buzzscout-radar-engine:v2.0.0 (by /u/buzzscout_bot)",
         "Accept": "application/json",
       },
       next: { revalidate: 30 },
@@ -39,22 +40,34 @@ export async function searchReddit(query: string, subreddit?: string | null): Pr
 
     const data = await res.json();
     const children = data?.data?.children || [];
+    
+    const now = Math.floor(Date.now() / 1000);
 
-    const posts: RedditPost[] = children.map((item: any) => {
+    const posts: RedditPost[] = [];
+    
+    for (const item of children) {
       const p = item.data;
-      return {
+      if (!p || !p.created_utc) continue;
+      
+      // Strict filtering: discard old posts (older than 7 days)
+      if (now - p.created_utc > MAX_AGE_SECONDS) continue;
+      
+      // Skip deleted or empty authors
+      if (p.author === "[deleted]" || !p.author) continue;
+
+      posts.push({
         id: p.id,
         title: p.title || "",
         selftext: p.selftext || "",
-        author: p.author || "[deleted]",
+        author: p.author,
         permalink: p.permalink ? `https://reddit.com${p.permalink}` : "",
         url: p.permalink ? `https://reddit.com${p.permalink}` : p.url || "",
         subreddit: p.subreddit || "",
-        createdUtc: p.created_utc || Math.floor(Date.now() / 1000),
+        createdUtc: p.created_utc,
         score: p.score || 1,
         numComments: p.num_comments || 0,
-      };
-    });
+      });
+    }
 
     if (posts.length === 0) {
       return await searchRedditRss(query, subreddit);
@@ -83,15 +96,15 @@ async function searchRedditRss(query: string, subreddit?: string | null): Promis
     });
 
     if (!res.ok) {
-      return generateSyntheticRedditPosts(query, subreddit);
+      return []; // Return empty array instead of fake data
     }
 
     const xmlText = await res.text();
     const entries: RedditPost[] = [];
     
-    // Parse entries from XML/Atom feed
     const entryRegex = /<entry>([\s\S]*?)<\/entry>/gi;
     let match;
+    const now = Math.floor(Date.now() / 1000);
 
     while ((match = entryRegex.exec(xmlText)) !== null && entries.length < 15) {
       const block = match[1];
@@ -100,13 +113,25 @@ async function searchRedditRss(query: string, subreddit?: string | null): Promis
       const authorMatch = /<author>[\s\S]*?<name>([^<]+)<\/name>/i.exec(block);
       const contentMatch = /<content[^>]*>([\s\S]*?)<\/content>/i.exec(block);
       const idMatch = /<id>([^<]+)<\/id>/i.exec(block);
+      const updatedMatch = /<updated>([^<]+)<\/updated>/i.exec(block);
 
       const title = (titleMatch ? titleMatch[1] : "").replace(/&amp;/g, "&").replace(/&quot;/g, '"');
       const permalink = linkMatch ? linkMatch[1] : "";
-      const author = authorMatch ? authorMatch[1].replace(/^\/u\//, "") : "IndieBuilder";
-      const id = idMatch ? idMatch[1].split("/").pop() || Math.random().toString(36).substring(7) : Math.random().toString(36).substring(7);
+      const author = authorMatch ? authorMatch[1].replace(/^\/u\//, "") : "";
+      const id = idMatch ? idMatch[1].split("/").pop() || "" : "";
+      
+      let createdUtc = now;
+      if (updatedMatch) {
+        const d = new Date(updatedMatch[1]);
+        if (!isNaN(d.getTime())) {
+          createdUtc = Math.floor(d.getTime() / 1000);
+        }
+      }
 
-      // Extract raw text from HTML content
+      // Strict filtering: 7 days max age and skip missing critical info
+      if (now - createdUtc > MAX_AGE_SECONDS) continue;
+      if (!id || !author || author === "[deleted]") continue;
+
       let text = (contentMatch ? contentMatch[1] : "")
         .replace(/<[^>]+>/g, " ")
         .replace(/&amp;/g, "&")
@@ -123,53 +148,17 @@ async function searchRedditRss(query: string, subreddit?: string | null): Promis
           author,
           permalink,
           url: permalink,
-          subreddit: subreddit || "startups",
-          createdUtc: Math.floor(Date.now() / 1000),
-          score: Math.floor(Math.random() * 25) + 3,
-          numComments: Math.floor(Math.random() * 18) + 2,
+          subreddit: subreddit || "",
+          createdUtc,
+          score: 1, // RSS doesn't reliably provide score
+          numComments: 0,
         });
       }
     }
 
-    if (entries.length === 0) {
-      return generateSyntheticRedditPosts(query, subreddit);
-    }
-
-    return entries;
+    return entries; // Return parsed real data or empty array
   } catch (err) {
-    console.warn("RSS parser error, using high-intent simulation:", err);
-    return generateSyntheticRedditPosts(query, subreddit);
+    console.warn("RSS parser error:", err);
+    return []; // Return empty array on error
   }
-}
-
-function generateSyntheticRedditPosts(query: string, subreddit?: string | null): RedditPost[] {
-  const cleanQ = query.toLowerCase();
-  const sub = subreddit || "startups";
-  
-  return [
-    {
-      id: "syn_rd_1",
-      title: `Looking for a great alternative to ${query.split(" ").slice(-1)[0] || "existing tools"} for a small team`,
-      selftext: `Current pricing plans are getting ridiculous. We need a straightforward solution that monitors keywords and triggers instant alerts without high monthly fees. Any recommendations?`,
-      author: "Founder_Dan99",
-      permalink: `https://reddit.com/r/${sub}/comments/indie_sample_1`,
-      url: `https://reddit.com/r/${sub}/comments/indie_sample_1`,
-      subreddit: sub,
-      createdUtc: Math.floor(Date.now() / 1000) - 120,
-      score: 18,
-      numComments: 9,
-    },
-    {
-      id: "syn_rd_2",
-      title: `What is the best tool for ${query}? Need advice`,
-      selftext: `We are launching next month and need to automate lead finding on Reddit and X. Looking for something lightweight that works with Telegram or Discord.`,
-      author: "GrowthMaker_Sarah",
-      permalink: `https://reddit.com/r/${sub}/comments/indie_sample_2`,
-      url: `https://reddit.com/r/${sub}/comments/indie_sample_2`,
-      subreddit: sub,
-      createdUtc: Math.floor(Date.now() / 1000) - 340,
-      score: 32,
-      numComments: 14,
-    },
-  ];
 }

@@ -7,10 +7,11 @@ export interface TweetPost {
   createdAt: string;
 }
 
+const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days maximum age
+
 export async function searchTwitter(query: string): Promise<TweetPost[]> {
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
-  // 1. If user has Twitter API v2 Bearer Token configured
   if (bearerToken) {
     try {
       const encodedQuery = encodeURIComponent(`${query} -is:retweet lang:en`);
@@ -28,62 +29,35 @@ export async function searchTwitter(query: string): Promise<TweetPost[]> {
         const usersMap = new Map<string, any>();
         (data.includes?.users || []).forEach((u: any) => usersMap.set(u.id, u));
 
-        return tweets.map((t: any) => {
+        const now = Date.now();
+        const validTweets: TweetPost[] = [];
+
+        for (const t of tweets) {
+          const tDate = new Date(t.created_at).getTime();
+          
+          // Strict filtering: discard old tweets
+          if (isNaN(tDate) || now - tDate > MAX_AGE_MS) continue;
+
           const user = usersMap.get(t.author_id);
           const username = user?.username || "unknown";
-          return {
+          
+          validTweets.push({
             id: t.id,
             text: t.text,
             author: user?.name || username,
             authorUsername: username,
             url: `https://x.com/${username}/status/${t.id}`,
-            createdAt: t.created_at || new Date().toISOString(),
-          };
-        });
+            createdAt: t.created_at,
+          });
+        }
+        
+        return validTweets;
       }
     } catch (err) {
-      console.warn("Failed querying Twitter API v2, falling back:", err);
+      console.warn("Failed querying Twitter API v2:", err);
     }
   }
 
-  // 2. High-fidelity synthetic fallback / simulation for test queries when no Twitter API key is provided
-  // This allows the product to function seamlessly out-of-the-box without requiring a $100/mo X Developer subscription
-  return generateSyntheticXPosts(query);
-}
-
-function generateSyntheticXPosts(query: string): TweetPost[] {
-  const cleanQ = query.toLowerCase();
-  const timestamp = new Date().toISOString();
-
-  if (cleanQ.includes("brand24") || cleanQ.includes("mention") || cleanQ.includes("monitor")) {
-    return [
-      {
-        id: `x-${Date.now()}-1`,
-        text: `Anyone know a solid alternative to Brand24 or Mention? $150/mo is crazy for a solo founder just starting out. Need real-time alerts.`,
-        author: "Alex Rivera",
-        authorUsername: "alexrivera_tech",
-        url: "https://x.com/alexrivera_tech",
-        createdAt: timestamp,
-      },
-      {
-        id: `x-${Date.now()}-2`,
-        text: `Looking for an affordable tool to monitor Reddit keywords and send alerts to Telegram. Tired of manual searching every morning!`,
-        author: "Sarah Chen",
-        authorUsername: "sarahchen_dev",
-        url: "https://x.com/sarahchen_dev",
-        createdAt: timestamp,
-      },
-    ];
-  }
-
-  return [
-    {
-      id: `x-${Date.now()}-sample`,
-      text: `Can anyone recommend a good tool for ${query}? Finding it hard to find something simple and budget friendly without huge enterprise plans.`,
-      author: "David Miller",
-      authorUsername: "davidm_builds",
-      url: "https://x.com/davidm_builds",
-      createdAt: timestamp,
-    },
-  ];
+  // Strictly return empty array if no real data is fetched
+  return [];
 }

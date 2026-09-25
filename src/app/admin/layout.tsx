@@ -37,7 +37,7 @@ export default function AdminLayout({
       .then((data) => {
         if (
           !data?.user ||
-          data.user.email?.toLowerCase().trim() !== "arifmuneeb81@gmail.com" ||
+          data.user.role !== "ADMIN" ||
           !data.user.googleId
         ) {
           router.replace("/dashboard");

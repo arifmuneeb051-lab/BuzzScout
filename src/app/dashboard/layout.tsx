@@ -127,7 +127,7 @@ export default function DashboardLayout({
       if (hash === "#admin") {
         if (
           user &&
-          user.email?.toLowerCase().trim() === "arifmuneeb81@gmail.com" &&
+          user.role === "ADMIN" &&
           user.googleId
         ) {
           // Master Admin authorized via Google OAuth -> Transition immediately to Admin Command Center

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { signJwt, COOKIE_NAME, ADMIN_COOKIE_NAME, MASTER_ADMIN_EMAIL, hashPassword } from "@/lib/auth";
+import { signJwt, COOKIE_NAME, ADMIN_COOKIE_NAME, isMasterAdminEmail, hashPassword } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL("/login?error=account_blocked", req.url));
     }
 
-    const isMasterAdmin = MASTER_ADMIN_EMAIL && googleEmail === MASTER_ADMIN_EMAIL.toLowerCase();
+    const isMasterAdmin = isMasterAdminEmail(googleEmail);
 
     if (user) {
       // If master admin logs in, ensure their privileges and active LTD pass are always active

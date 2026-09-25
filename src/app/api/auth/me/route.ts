@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, COOKIE_NAME, ADMIN_COOKIE_NAME, MASTER_ADMIN_EMAIL, verifyPassword, hashPassword } from "@/lib/auth";
+import { getCurrentUser, COOKIE_NAME, ADMIN_COOKIE_NAME, isMasterAdminEmail, verifyPassword, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sanitizeError } from "@/lib/security";
 
@@ -72,7 +72,7 @@ export async function DELETE() {
   // Prevent Master Admin self-deletion via self-service user endpoint
   if (
     user.role === "ADMIN" ||
-    (MASTER_ADMIN_EMAIL && user.email.toLowerCase().trim() === MASTER_ADMIN_EMAIL.toLowerCase().trim())
+    isMasterAdminEmail(user.email)
   ) {
     return NextResponse.json(
       { error: "Master Administrator account cannot be deleted via self-service." },

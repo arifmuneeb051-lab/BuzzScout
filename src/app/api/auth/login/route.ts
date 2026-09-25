@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPassword, signJwt, COOKIE_NAME, ADMIN_COOKIE_NAME, MASTER_ADMIN_EMAIL, SESSION_MAX_AGE } from "@/lib/auth";
+import { verifyPassword, signJwt, COOKIE_NAME, ADMIN_COOKIE_NAME, isMasterAdminEmail, SESSION_MAX_AGE } from "@/lib/auth";
 import { formatSafeError } from "@/lib/security";
 import { logSecurityEvent } from "@/lib/audit-logger";
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     // STRICT OWNER RESTRICTION: Master Administrator is prohibited from using manual password login.
     // Must authenticate exclusively through verified Google OAuth.
-    if (MASTER_ADMIN_EMAIL && cleanEmail === MASTER_ADMIN_EMAIL.toLowerCase()) {
+    if (isMasterAdminEmail(cleanEmail)) {
       return NextResponse.json(
         {
           error: "Security Policy: Master Administrator account is protected by OAuth. You must sign in exclusively via 'Sign in with Google'.",
@@ -129,10 +129,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const isMasterAdmin = Boolean(
-      MASTER_ADMIN_EMAIL &&
-      cleanEmail === MASTER_ADMIN_EMAIL.toLowerCase()
-    );
+    const isMasterAdmin = isMasterAdminEmail(cleanEmail);
 
     if (isMasterAdmin && (user.role !== "ADMIN" || user.planStatus !== "ACTIVE")) {
       await prisma.user.update({

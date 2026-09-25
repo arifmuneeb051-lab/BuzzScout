@@ -14,7 +14,6 @@ function decodeJwtPayload(token?: string): { email?: string; role?: string; plan
   }
 }
 
-const MASTER_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "").toLowerCase().trim();
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -241,14 +240,20 @@ export function middleware(req: NextRequest) {
   }
 
   // STEALTH ADMIN PROTECTION: Hard Lockout & Instant Dashboard Throw
-  // Admin panel is strictly restricted: ONLY arifmuneeb81@gmail.com authenticated via "Sign In with Google" is allowed.
+  // Admin panel is strictly restricted: ONLY verified admin emails authenticated via "Sign In with Google" are allowed.
   if (pathname.startsWith("/admin")) {
+    const adminEmails = (process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "")
+      .toLowerCase()
+      .split(",")
+      .map(e => e.trim())
+      .filter(Boolean);
+    const activeEmail = adminPayload?.email?.toLowerCase().trim() || userPayload?.email?.toLowerCase().trim() || "";
+    
     const isMasterAdmin = Boolean(
-      (adminPayload?.email?.toLowerCase().trim() === MASTER_ADMIN_EMAIL || userPayload?.email?.toLowerCase().trim() === MASTER_ADMIN_EMAIL) &&
+      activeEmail &&
+      adminEmails.includes(activeEmail) &&
       (adminPayload?.role === "ADMIN" || userPayload?.role === "ADMIN") &&
-      (adminPayload?.authProvider === "GOOGLE" || userPayload?.authProvider === "GOOGLE") &&
-      MASTER_ADMIN_EMAIL &&
-      MASTER_ADMIN_EMAIL === "arifmuneeb81@gmail.com"
+      (adminPayload?.authProvider === "GOOGLE" || userPayload?.authProvider === "GOOGLE")
     );
 
     if (!isMasterAdmin) {

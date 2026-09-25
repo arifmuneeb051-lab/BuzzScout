@@ -112,7 +112,19 @@ export async function getCurrentUser() {
   }
 }
 
-export const MASTER_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "").toLowerCase().trim();
+export const getAdminEmails = () => {
+  return (process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "")
+    .toLowerCase()
+    .split(",")
+    .map(e => e.trim())
+    .filter(Boolean);
+};
+
+export const isMasterAdminEmail = (email?: string | null) => {
+  if (!email) return false;
+  const admins = getAdminEmails();
+  return admins.includes(email.toLowerCase().trim());
+};
 
 export async function getAdminUser() {
   try {
@@ -144,13 +156,12 @@ export async function getAdminUser() {
       },
     });
 
-    // Strictly enforce: Role must be ADMIN, email matches MASTER_ADMIN_EMAIL, and googleId is attached
+    // Strictly enforce: Role must be ADMIN, email is in admin list, and googleId is attached
     if (
       user &&
       user.role === "ADMIN" &&
       user.googleId &&
-      MASTER_ADMIN_EMAIL &&
-      user.email.toLowerCase().trim() === MASTER_ADMIN_EMAIL
+      isMasterAdminEmail(user.email)
     ) {
       return user;
     }

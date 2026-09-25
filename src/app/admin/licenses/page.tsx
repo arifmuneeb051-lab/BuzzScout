@@ -141,7 +141,10 @@ export default function AdminLicensesPage() {
             <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Plan Type</label>
             <select
               value={selectedPlan}
-              onChange={(e) => setSelectedPlan(e.target.value)}
+              onChange={(e) => {
+                setSelectedPlan(e.target.value);
+                if (e.target.value === "LTD") setValidDays("");
+              }}
               className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
             >
               <option value="LTD">LTD (Lifetime)</option>
@@ -172,10 +175,15 @@ export default function AdminLicensesPage() {
             <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Valid Days (Optional)</label>
             <input
               type="number"
-              placeholder="e.g. 30"
+              placeholder={selectedPlan === "LTD" ? "N/A for LTD" : "e.g. 30"}
               value={validDays}
               onChange={(e) => setValidDays(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+              disabled={selectedPlan === "LTD"}
+              className={`w-full px-3 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-amber-500 ${
+                selectedPlan === "LTD" 
+                  ? "bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed" 
+                  : "bg-slate-900 border-slate-700 text-white"
+              }`}
             />
           </div>
           <div className="md:col-span-4 flex flex-wrap gap-3 pt-2">
@@ -185,17 +193,7 @@ export default function AdminLicensesPage() {
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>{generating ? "Generating..." : "Generate Custom Key"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleGenerate(undefined, "LTD")}
-              disabled={generating}
-              className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2"
-            >
-              <Zap className="w-4 h-4" />
-              <span>1-Click LTD Key</span>
+              <span>{generating ? "Generating..." : "Generate Key"}</span>
             </button>
           </div>
         </form>

@@ -40,6 +40,7 @@ model User {
   keywords     Keyword[]
   leads        Lead[]
   channels     AlertChannel[]
+  transactions PaymentTransaction[]
 }
 
 model Keyword {
@@ -137,12 +138,13 @@ model SiteConfig {
 model PaymentTransaction {
   id              String   @id @default(cuid())
   userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   userEmail       String
   amount          Float
   currency        String   @default("usd")
   plan            String   // PRO, LTD, AGENCY
   status          String   @default("COMPLETED") // COMPLETED, PENDING, FAILED
-  paymentMethod   String   @default("CARD") // STRIPE, CARD
+  paymentMethod   String   @default("CARD") // STRIPE, CARD, LEMON_SQUEEZY, ADMIN_LICENSE_KEY
   stripeSessionId String?
   cardLast4       String?
   createdAt       DateTime @default(now())

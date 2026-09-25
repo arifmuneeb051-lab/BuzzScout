@@ -41,6 +41,11 @@ export async function GET(req: Request) {
         notes: true,
         isPinned: true,
         createdAt: true,
+        transactions: {
+          select: { paymentMethod: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
         _count: {
           select: {
             keywords: true,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Search, Trash2, ShieldCheck, CheckCircle2, Pin, CalendarPlus, StickyNote, Edit, X } from "lucide-react";
+import { Users, Search, Trash2, ShieldCheck, CheckCircle2, Pin, CalendarPlus, StickyNote, Edit, X, UserX } from "lucide-react";
 
 interface UserItem {
   id: string;
@@ -15,6 +15,7 @@ interface UserItem {
   notes: string | null;
   isPinned: boolean;
   createdAt: string;
+  transactions?: { paymentMethod: string }[];
   _count: {
     keywords: number;
     leads: number;
@@ -27,6 +28,9 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<"ALL" | "PAID" | "KEY">("ALL");
 
   // Notes Modal State
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
@@ -86,6 +90,23 @@ export default function AdminUsersPage() {
       }
     } catch {
       alert("Failed to update user status");
+    }
+  };
+
+  const handleRevokeAccess = async (userId: string) => {
+    if (!confirm("Are you sure you want to completely revoke access for this user? They will be downgraded to INACTIVE.")) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, plan: "INACTIVE", planStatus: "PENDING_PAYMENT" }),
+      });
+      if (res.ok) {
+        showStatus("User access fully revoked.");
+        fetchUsers();
+      }
+    } catch {
+      alert("Failed to revoke access");
     }
   };
 
@@ -162,6 +183,13 @@ export default function AdminUsersPage() {
     }
   };
 
+  const filteredUsers = users.filter((u) => {
+    const paymentMethod = u.transactions?.[0]?.paymentMethod || "UNKNOWN";
+    if (activeTab === "PAID") return paymentMethod === "LEMON_SQUEEZY" || paymentMethod === "STRIPE" || paymentMethod === "CARD";
+    if (activeTab === "KEY") return paymentMethod === "ADMIN_LICENSE_KEY";
+    return true; // ALL
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -195,15 +223,43 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex bg-[#0c101c] p-1 rounded-xl w-full sm:w-max border border-white/10 shadow-lg">
+        <button
+          onClick={() => setActiveTab("ALL")}
+          className={`flex-1 sm:px-6 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === "ALL" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+          }`}
+        >
+          All Users
+        </button>
+        <button
+          onClick={() => setActiveTab("PAID")}
+          className={`flex-1 sm:px-6 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === "PAID" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+          }`}
+        >
+          LemonSqueezy / Paid
+        </button>
+        <button
+          onClick={() => setActiveTab("KEY")}
+          className={`flex-1 sm:px-6 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === "KEY" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+          }`}
+        >
+          License Key Users
+        </button>
+      </div>
+
       {/* Users Table */}
       <div className="rounded-3xl bg-[#0c101c] border border-white/10 overflow-hidden shadow-xl">
         {loading ? (
           <div className="p-12 text-center text-slate-500 text-sm">
             Searching user database...
           </div>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-sm">
-            No users found matching query.
+            No users found in this category.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -213,13 +269,15 @@ export default function AdminUsersPage() {
                   <th className="py-3.5 px-6">Name / Email</th>
                   <th className="py-3.5 px-6">Product & Notes</th>
                   <th className="py-3.5 px-6">Current Plan</th>
-                  <th className="py-3.5 px-6">Activity</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
+                  <th className="py-3.5 px-6">Origin</th>
+                  <th className="py-3.5 px-6 text-right">Access Controls</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-xs">
-                {users.map((u) => {
+                {filteredUsers.map((u) => {
                   const isBlocked = u.planStatus === "SUSPENDED";
+                  const paymentMethod = u.transactions?.[0]?.paymentMethod || "UNKNOWN";
+                  
                   return (
                     <tr key={u.id} className={`transition-colors ${u.isPinned ? "bg-amber-500/5 hover:bg-amber-500/10" : "hover:bg-slate-900/40"}`}>
                       <td className="py-4 px-6 flex items-start gap-3">
@@ -269,23 +327,38 @@ export default function AdminUsersPage() {
                         )}
                       </td>
 
-                      <td className="py-4 px-6 font-mono text-slate-300 text-[11px]">
-                        {u._count.keywords} kw &bull; {u._count.leads} leads &bull; {u._count.channels} ch
+                      <td className="py-4 px-6">
+                        {paymentMethod === "LEMON_SQUEEZY" || paymentMethod === "STRIPE" || paymentMethod === "CARD" ? (
+                           <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-bold text-[10px] border border-emerald-500/20">PAID SUBSCRIPTION</span>
+                        ) : paymentMethod === "ADMIN_LICENSE_KEY" ? (
+                           <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 font-bold text-[10px] border border-blue-500/20">LICENSE KEY</span>
+                        ) : (
+                           <span className="px-2 py-1 rounded bg-slate-800 text-slate-400 font-bold text-[10px]">UNKNOWN</span>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 text-right space-y-2">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleRevokeAccess(u.id)}
+                            className="px-2 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 font-bold text-[10px] transition-all flex items-center gap-1"
+                            title="1-Click Revoke Access (Sets to INACTIVE)"
+                          >
+                            <UserX className="w-3 h-3" />
+                            Revoke
+                          </button>
+                          
                           {isBlocked ? (
                             <button
                               onClick={() => handleUpdateStatus(u.id, "ACTIVE")}
-                              className="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 font-bold text-[10px] transition-all"
+                              className="px-2 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 font-bold text-[10px] transition-all"
                             >
                               Unblock
                             </button>
                           ) : (
                             <button
                               onClick={() => handleUpdateStatus(u.id, "SUSPENDED")}
-                              className="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold text-[10px] transition-all"
+                              className="px-2 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold text-[10px] transition-all"
                             >
                               Block
                             </button>

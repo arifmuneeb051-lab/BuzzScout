@@ -24,12 +24,7 @@ export default function AdminSettingsPage() {
     paymentMode: "TEST",
   });
 
-  // Admin Credentials State
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [adminConfirmPassword, setAdminConfirmPassword] = useState("");
-  const [credSaving, setCredSaving] = useState(false);
-  const [credMessage, setCredMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,44 +94,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleUpdateCredentials = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCredSaving(true);
-    setCredMessage(null);
 
-    if (adminPassword && adminPassword !== adminConfirmPassword) {
-      setCredMessage({ type: "error", text: "Passwords do not match. Please enter the same password in both fields." });
-      setCredSaving(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/admin/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          newEmail: adminEmail || undefined,
-          newPassword: adminPassword || undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setCredMessage({
-          type: "success",
-          text: data.message || "Admin login credentials successfully updated! Your new details are active.",
-        });
-        setAdminPassword("");
-        setAdminConfirmPassword("");
-      } else {
-        setCredMessage({ type: "error", text: data.error || "Failed to update admin credentials" });
-      }
-    } catch {
-      setCredMessage({ type: "error", text: "Network error updating admin credentials" });
-    } finally {
-      setCredSaving(false);
-    }
-  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -425,106 +383,6 @@ export default function AdminSettingsPage() {
         </div>
       </form>
 
-      {/* =========================================================
-          ADMIN CREDENTIALS & MASTER SECURITY (Change Username/Password)
-          ========================================================= */}
-      <div className="p-6 rounded-3xl bg-[#0b0f19]/90 border border-amber-500/20 shadow-2xl space-y-5 mt-8">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
-              Admin Portal Security & Credentials (Change Login)
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Change the master administrator login email (username) and password from here at any time.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">
-            Owner Access Only
-          </span>
-        </div>
-
-        {credMessage && (
-          <div
-            className={`p-4 rounded-2xl text-xs flex items-center gap-2.5 border ${
-              credMessage.type === "success"
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-            }`}
-          >
-            {credMessage.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-            )}
-            <span className="font-medium">{credMessage.text}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleUpdateCredentials} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                New Admin Email / Username
-              </label>
-              <input
-                type="email"
-                placeholder="owner@yourdomain.com"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-              />
-              <span className="text-[10px] text-slate-500 mt-1 block">
-                Leave blank if keeping current email
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                New Admin Password
-              </label>
-              <input
-                type="password"
-                placeholder="At least 6 characters"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
-              <span className="text-[10px] text-slate-500 mt-1 block">
-                Leave blank if keeping current password
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                placeholder="Re-enter new password"
-                value={adminConfirmPassword}
-                onChange={(e) => setAdminConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-slate-400">
-              Master Admin: <span className="font-mono text-amber-300 font-bold">Configured in .env (Single Owner Restricted)</span>
-            </p>
-
-            <button
-              type="submit"
-              disabled={credSaving}
-              className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-600/30 transition-all flex items-center gap-2"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{credSaving ? "Updating Credentials..." : "Update Admin Login"}</span>
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

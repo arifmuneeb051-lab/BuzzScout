@@ -25,7 +25,10 @@ export async function GET(req: Request) {
             }
           : {}),
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { isPinned: "desc" },
+        { createdAt: "desc" }
+      ],
       select: {
         id: true,
         email: true,
@@ -34,6 +37,9 @@ export async function GET(req: Request) {
         productUrl: true,
         plan: true,
         planStatus: true,
+        planExpiresAt: true,
+        notes: true,
+        isPinned: true,
         createdAt: true,
         _count: {
           select: {
@@ -59,7 +65,7 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const { userId, plan, planStatus } = await req.json();
+    const { userId, plan, planStatus, isPinned, notes, add30Days } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -74,8 +80,17 @@ export async function PATCH(req: Request) {
     }
 
     const data: any = {};
-    if (plan) data.plan = plan;
-    if (planStatus) data.planStatus = planStatus;
+    if (plan !== undefined) data.plan = plan;
+    if (planStatus !== undefined) data.planStatus = planStatus;
+    if (isPinned !== undefined) data.isPinned = isPinned;
+    if (notes !== undefined) data.notes = notes;
+    
+    if (add30Days) {
+      const currentExpiry = targetUser.planExpiresAt || new Date();
+      const newExpiry = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+      data.planExpiresAt = newExpiry;
+      data.planStatus = "ACTIVE";
+    }
 
     const updated = await prisma.user.update({
       where: { id: userId },

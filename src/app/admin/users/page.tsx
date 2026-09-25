@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Search, Trash2, ShieldCheck, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { Users, Search, Trash2, ShieldCheck, CheckCircle2, Pin, CalendarPlus, StickyNote, Edit, X } from "lucide-react";
 
 interface UserItem {
   id: string;
@@ -11,6 +11,9 @@ interface UserItem {
   productUrl: string;
   plan: string;
   planStatus: string;
+  planExpiresAt: string | null;
+  notes: string | null;
+  isPinned: boolean;
   createdAt: string;
   _count: {
     keywords: number;
@@ -24,41 +27,12 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
-  const [grantEmail, setGrantEmail] = useState("");
-  const [grantPlan, setGrantPlan] = useState("LTD");
-  const [grantName, setGrantName] = useState("");
-  const [grantLoading, setGrantLoading] = useState(false);
 
-  const handleGrantAccess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!grantEmail) return;
-    setGrantLoading(true);
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: grantEmail,
-          plan: grantPlan,
-          name: grantName,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setActionStatus(data.message || `Granted ${grantPlan} access to ${grantEmail}!`);
-        setGrantEmail("");
-        setGrantName("");
-        setTimeout(() => setActionStatus(null), 4000);
-        fetchUsers();
-      } else {
-        alert(data.error || "Failed to grant package access");
-      }
-    } catch {
-      alert("Network error granting package access");
-    } finally {
-      setGrantLoading(false);
-    }
-  };
+  // Notes Modal State
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [activeNotesUserId, setActiveNotesUserId] = useState<string | null>(null);
+  const [activeNotesText, setActiveNotesText] = useState("");
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -78,6 +52,11 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [search]);
 
+  const showStatus = (msg: string) => {
+    setActionStatus(msg);
+    setTimeout(() => setActionStatus(null), 3000);
+  };
+
   const handleUpdatePlan = async (userId: string, newPlan: string) => {
     try {
       const res = await fetch("/api/admin/users", {
@@ -86,8 +65,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ userId, plan: newPlan }),
       });
       if (res.ok) {
-        setActionStatus(`Plan upgraded to ${newPlan}!`);
-        setTimeout(() => setActionStatus(null), 3000);
+        showStatus(`Plan upgraded to ${newPlan}!`);
         fetchUsers();
       }
     } catch {
@@ -103,8 +81,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ userId, planStatus: targetStatus }),
       });
       if (res.ok) {
-        setActionStatus(`User marked as ${targetStatus === "ACTIVE" ? "ALLOWED / ACTIVE" : "BLOCKED"}!`);
-        setTimeout(() => setActionStatus(null), 3000);
+        showStatus(`User marked as ${targetStatus === "ACTIVE" ? "ALLOWED / ACTIVE" : "BLOCKED"}!`);
         fetchUsers();
       }
     } catch {
@@ -117,12 +94,71 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`/api/admin/users?id=${userId}`, { method: "DELETE" });
       if (res.ok) {
-        setActionStatus("User successfully deleted.");
-        setTimeout(() => setActionStatus(null), 3000);
+        showStatus("User successfully deleted.");
         fetchUsers();
       }
     } catch {
       alert("Failed to delete user");
+    }
+  };
+
+  const handleTogglePin = async (userId: string, currentPin: boolean) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, isPinned: !currentPin }),
+      });
+      if (res.ok) {
+        showStatus(!currentPin ? "User Pinned!" : "User Unpinned!");
+        fetchUsers();
+      }
+    } catch {
+      alert("Failed to toggle pin");
+    }
+  };
+
+  const handleAdd30Days = async (userId: string) => {
+    if (!confirm("Are you sure you want to add 30 days to this user's plan?")) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, add30Days: true }),
+      });
+      if (res.ok) {
+        showStatus("Added 30 days to plan successfully.");
+        fetchUsers();
+      }
+    } catch {
+      alert("Failed to add 30 days");
+    }
+  };
+
+  const openNotesModal = (user: UserItem) => {
+    setActiveNotesUserId(user.id);
+    setActiveNotesText(user.notes || "");
+    setIsNotesModalOpen(true);
+  };
+
+  const saveNotes = async () => {
+    if (!activeNotesUserId) return;
+    setNotesSaving(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: activeNotesUserId, notes: activeNotesText }),
+      });
+      if (res.ok) {
+        showStatus("Notes updated successfully.");
+        setIsNotesModalOpen(false);
+        fetchUsers();
+      }
+    } catch {
+      alert("Failed to save notes");
+    } finally {
+      setNotesSaving(false);
     }
   };
 
@@ -132,10 +168,10 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-amber-400" />
-            User Database &amp; Access Control
+            User Database &amp; Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Manage customer accounts, assign plans, and 1-click Block or Unblock user access.
+            Manage customer accounts, plans, notes, and direct access controls.
           </p>
         </div>
 
@@ -159,44 +195,6 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Direct Package Provisioning Form */}
-      <div className="rounded-2xl bg-[#0c1220] border border-amber-500/20 p-5 shadow-xl">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-extrabold text-white">Direct Package Provisioning (Manual Access Grant)</h3>
-        </div>
-        <p className="text-xs text-slate-400 mb-4">
-          Assign any package to an existing or new customer directly without payment. If the account does not exist, it will be automatically created with full access.
-        </p>
-        <form onSubmit={handleGrantAccess} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <input
-            type="email"
-            required
-            value={grantEmail}
-            onChange={(e) => setGrantEmail(e.target.value)}
-            placeholder="User email (e.g. founder@company.com)"
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 sm:col-span-2"
-          />
-          <select
-            value={grantPlan}
-            onChange={(e) => setGrantPlan(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
-          >
-            <option value="PRO">PRO ($9/mo Monthly)</option>
-            <option value="LTD">LTD ($49 Lifetime Pass)</option>
-            <option value="INACTIVE">INACTIVE (Revoke Access)</option>
-          </select>
-          <button
-            type="submit"
-            disabled={grantLoading || !grantEmail}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>{grantLoading ? "Granting..." : "Grant Access Now"}</span>
-          </button>
-        </form>
-      </div>
-
       {/* Users Table */}
       <div className="rounded-3xl bg-[#0c101c] border border-white/10 overflow-hidden shadow-xl">
         {loading ? (
@@ -213,85 +211,89 @@ export default function AdminUsersPage() {
               <thead>
                 <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="py-3.5 px-6">Name / Email</th>
-                  <th className="py-3.5 px-6">Product Tracked</th>
+                  <th className="py-3.5 px-6">Product & Notes</th>
                   <th className="py-3.5 px-6">Current Plan</th>
                   <th className="py-3.5 px-6">Activity</th>
-                  <th className="py-3.5 px-6">Access Status</th>
-                  <th className="py-3.5 px-6 text-right">Block / Unblock &amp; Actions</th>
+                  <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-xs">
                 {users.map((u) => {
                   const isBlocked = u.planStatus === "SUSPENDED";
                   return (
-                    <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="font-bold text-white block">{u.name || "Founder"}</span>
-                        <span className="font-mono text-slate-400 text-[11px]">{u.email}</span>
+                    <tr key={u.id} className={`transition-colors ${u.isPinned ? "bg-amber-500/5 hover:bg-amber-500/10" : "hover:bg-slate-900/40"}`}>
+                      <td className="py-4 px-6 flex items-start gap-3">
+                        <button 
+                          onClick={() => handleTogglePin(u.id, u.isPinned)}
+                          className={`mt-0.5 p-1 rounded-md transition-colors ${u.isPinned ? "text-amber-400 bg-amber-400/10" : "text-slate-600 hover:bg-slate-800 hover:text-slate-400"}`}
+                          title={u.isPinned ? "Unpin user" : "Pin user to top"}
+                        >
+                          <Pin className="w-3.5 h-3.5" />
+                        </button>
+                        <div>
+                          <span className="font-bold text-white block">{u.name || "Founder"}</span>
+                          <span className="font-mono text-slate-400 text-[11px]">{u.email}</span>
+                        </div>
                       </td>
 
                       <td className="py-4 px-6">
                         <span className="font-semibold text-slate-300 block">{u.productName || "None"}</span>
-                        <span className="text-[11px] text-slate-500 truncate block max-w-[150px]">{u.productUrl}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[11px] text-slate-500 truncate max-w-[120px]">{u.productUrl}</span>
+                          <button onClick={() => openNotesModal(u)} className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 transition-colors flex items-center gap-1" title="Edit Notes">
+                            <Edit className="w-3 h-3" />
+                            {u.notes ? <span className="text-[9px] font-bold text-amber-500">Note</span> : null}
+                          </button>
+                        </div>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <select
-                          value={u.plan}
-                          onChange={(e) => handleUpdatePlan(u.id, e.target.value)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
-                        >
-                          <option value="INACTIVE">INACTIVE (Pending Payment)</option>
-                          <option value="PRO">PRO ($9/mo)</option>
-                          <option value="LTD">LTD ($49 Lifetime)</option>
-                        </select>
+                      <td className="py-4 px-6 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={u.plan}
+                            onChange={(e) => handleUpdatePlan(u.id, e.target.value)}
+                            className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                          >
+                            <option value="INACTIVE">INACTIVE</option>
+                            <option value="PRO">PRO</option>
+                            <option value="LTD">LTD</option>
+                          </select>
+                          
+                          <button onClick={() => handleAdd30Days(u.id)} className="p-1 rounded bg-slate-800 hover:bg-emerald-500/20 text-emerald-400 border border-transparent hover:border-emerald-500/30 transition-colors flex items-center gap-1" title="Add +30 Days">
+                            <CalendarPlus className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-bold">+30D</span>
+                          </button>
+                        </div>
+                        {u.planExpiresAt && (
+                           <div className="text-[10px] text-slate-500">Exp: {new Date(u.planExpiresAt).toLocaleDateString()}</div>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 font-mono text-slate-300 text-[11px]">
                         {u._count.keywords} kw &bull; {u._count.leads} leads &bull; {u._count.channels} ch
                       </td>
 
-                      <td className="py-4 px-6">
-                        {isBlocked ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[11px] font-extrabold tracking-wide">
-                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
-                            🔴 BLOCKED
-                          </span>
-                        ) : u.planStatus === "ACTIVE" ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-extrabold tracking-wide">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            🟢 ACTIVE
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-extrabold tracking-wide">
-                            🟡 PENDING
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-6 text-right">
-                        <div className="inline-flex items-center justify-end gap-2">
+                      <td className="py-4 px-6 text-right space-y-2">
+                        <div className="flex items-center justify-end gap-2">
                           {isBlocked ? (
                             <button
                               onClick={() => handleUpdateStatus(u.id, "ACTIVE")}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-sm"
-                              title="Restore account access"
+                              className="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 font-bold text-[10px] transition-all"
                             >
-                              <span>✅ Unblock User</span>
+                              Unblock
                             </button>
                           ) : (
                             <button
                               onClick={() => handleUpdateStatus(u.id, "SUSPENDED")}
-                              className="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-sm"
-                              title="Revoke access & block user login"
+                              className="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 font-bold text-[10px] transition-all"
                             >
-                              <span>🚫 Block User</span>
+                              Block
                             </button>
                           )}
                           <button
                             onClick={() => handleDeleteUser(u.id)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                            title="Delete customer account completely"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/30"
+                            title="Delete Account completely"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -305,6 +307,38 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {/* Notes Modal */}
+      {isNotesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0b0f19] border border-slate-800 p-6 rounded-3xl shadow-2xl w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <StickyNote className="w-5 h-5 text-amber-500" />
+                User Internal Notes
+              </h3>
+              <button onClick={() => setIsNotesModalOpen(false)} className="text-slate-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <textarea
+              className="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:border-amber-500 resize-none"
+              placeholder="Write internal admin notes here..."
+              value={activeNotesText}
+              onChange={(e) => setActiveNotesText(e.target.value)}
+            />
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={saveNotes}
+                disabled={notesSaving}
+                className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl transition-all"
+              >
+                {notesSaving ? "Saving..." : "Save Notes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

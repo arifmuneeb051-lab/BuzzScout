@@ -11,8 +11,25 @@ export async function GET() {
   }
 
   try {
+    // Keep only last 100 used keys
+    const usedKeys = await prisma.licenseKey.findMany({
+      where: { isUsed: true },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true }
+    });
+
+    if (usedKeys.length > 100) {
+      const keysToDelete = usedKeys.slice(100).map(k => k.id);
+      await prisma.licenseKey.deleteMany({
+        where: { id: { in: keysToDelete } }
+      });
+    }
+
     const licenses = await prisma.licenseKey.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { isPinned: "desc" },
+        { createdAt: "desc" }
+      ],
     });
 
     return NextResponse.json({ licenses });
@@ -29,38 +46,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { customCode, plan, count } = await req.json().catch(() => ({}));
+    const { customCode, plan, lockedToEmail, validDays } = await req.json().catch(() => ({}));
     const targetPlan = plan ? plan.toUpperCase().trim() : "LTD";
-    const batchCount = Math.min(Math.max(1, parseInt(count, 10) || 1), 500);
-
-    // Bulk License Key Generation (Up to 500 keys in one click)
-    if (batchCount > 1) {
-      const keysToCreate: { code: string; plan: string; isUsed: boolean }[] = [];
-      const generatedCodes = new Set<string>();
-
-      while (generatedCodes.size < batchCount) {
-        const randomSuffix = crypto.randomBytes(4).toString("hex").toUpperCase();
-        const code = `BUZZ-${targetPlan}-${randomSuffix}`;
-        if (!generatedCodes.has(code)) {
-          generatedCodes.add(code);
-          keysToCreate.push({ code, plan: targetPlan, isUsed: false });
-        }
-      }
-
-      const created = await prisma.licenseKey.createMany({
-        data: keysToCreate,
-        skipDuplicates: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: `Successfully generated ${created.count} license keys for plan ${targetPlan}!`,
-        count: created.count,
-        keys: keysToCreate.map((k) => k.code),
-      });
-    }
-
-    // Single Key Generation
+    
     const randomSuffix = crypto.randomBytes(4).toString("hex").toUpperCase();
     const code = customCode && customCode.trim().length > 0
       ? customCode.trim().toUpperCase()
@@ -74,15 +62,70 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "A license key with this code already exists" }, { status: 400 });
     }
 
+    let expiresAt = null;
+    if (validDays) {
+      const days = parseInt(validDays, 10);
+      if (days > 0) {
+        expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      }
+    }
+
     const created = await prisma.licenseKey.create({
       data: {
         code,
         plan: targetPlan,
         isUsed: false,
+        lockedToEmail: lockedToEmail ? lockedToEmail.toLowerCase().trim() : null,
+        expiresAt: expiresAt,
       },
     });
 
     return NextResponse.json({ success: true, license: created });
+  } catch (err: any) {
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized admin access" }, { status: 401 });
+  }
+
+  try {
+    const { id, isPinned } = await req.json();
+    if (!id) return NextResponse.json({ error: "Key ID required" }, { status: 400 });
+
+    const updated = await prisma.licenseKey.update({
+      where: { id },
+      data: { isPinned: Boolean(isPinned) }
+    });
+
+    return NextResponse.json({ success: true, license: updated });
+  } catch (err: any) {
+    const safeErr = formatSafeError(err);
+    return NextResponse.json(safeErr, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized admin access" }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    
+    if (!id) return NextResponse.json({ error: "Key ID required" }, { status: 400 });
+
+    await prisma.licenseKey.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     const safeErr = formatSafeError(err);
     return NextResponse.json(safeErr, { status: 500 });

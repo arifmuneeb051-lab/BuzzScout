@@ -82,12 +82,22 @@ export async function getCurrentUser() {
         productPitch: true,
         plan: true,
         planStatus: true,
+        planExpiresAt: true,
         emailVerified: true,
         createdAt: true,
       },
     });
 
     if (!user) return null;
+
+    // Enforce plan expiry (auto-downgrade to INACTIVE if expired)
+    if (user.role !== "ADMIN" && user.planStatus === "ACTIVE" && user.planExpiresAt && new Date(user.planExpiresAt) < new Date()) {
+      user.planStatus = "INACTIVE";
+      prisma.user.update({
+        where: { id: user.id },
+        data: { planStatus: "INACTIVE" }
+      }).catch(() => {});
+    }
 
     // If user has been blocked/suspended by admin, revoke session
     if (user.role !== "ADMIN" && user.planStatus === "SUSPENDED") {

@@ -31,6 +31,9 @@ model User {
   passwordResetExpires     DateTime?
   failedLoginAttempts      Int            @default(0)
   lockoutUntil             DateTime?
+  planExpiresAt            DateTime?
+  notes                    String?
+  isPinned                 Boolean        @default(false)
   createdAt                DateTime       @default(now())
   updatedAt                DateTime       @updatedAt
 
@@ -94,13 +97,16 @@ model AlertChannel {
 }
 
 model LicenseKey {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  plan        String    @default("LTD")
-  isUsed      Boolean   @default(false)
-  usedByEmail String?
-  createdAt   DateTime  @default(now())
-  redeemedAt  DateTime?
+  id            String    @id @default(cuid())
+  code          String    @unique
+  plan          String    @default("LTD")
+  isUsed        Boolean   @default(false)
+  usedByEmail   String?
+  lockedToEmail String?
+  expiresAt     DateTime?
+  isPinned      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  redeemedAt    DateTime?
 }
 
 model SiteConfig {

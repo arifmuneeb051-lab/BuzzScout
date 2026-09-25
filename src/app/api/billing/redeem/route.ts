@@ -18,6 +18,21 @@ export async function POST(req: Request) {
 
     const cleanCode = code.trim().toUpperCase();
 
+    const existing = await prisma.licenseKey.findUnique({ where: { code: cleanCode } });
+    
+    if (!existing) {
+      return NextResponse.json({ error: "Invalid license code. Please check and try again." }, { status: 404 });
+    }
+    if (existing.isUsed) {
+      return NextResponse.json({ error: "This license key has already been redeemed." }, { status: 400 });
+    }
+    if (existing.lockedToEmail && existing.lockedToEmail !== user.email.toLowerCase()) {
+      return NextResponse.json({ error: "This license key is locked to a different email address." }, { status: 403 });
+    }
+    if (existing.expiresAt && new Date() > new Date(existing.expiresAt)) {
+      return NextResponse.json({ error: "This license key has expired." }, { status: 400 });
+    }
+
     // Atomic update to eliminate race condition / double-redemption
     const updateResult = await prisma.licenseKey.updateMany({
       where: { code: cleanCode, isUsed: false },
@@ -29,23 +44,24 @@ export async function POST(req: Request) {
     });
 
     if (updateResult.count === 0) {
-      const existing = await prisma.licenseKey.findUnique({ where: { code: cleanCode } });
-      if (!existing) {
-        return NextResponse.json({ error: "Invalid license code. Please check and try again." }, { status: 404 });
-      }
-      return NextResponse.json({ error: "This license key has already been redeemed." }, { status: 400 });
+      return NextResponse.json({ error: "Race condition: Key was redeemed by someone else." }, { status: 400 });
     }
 
-    const license = await prisma.licenseKey.findUnique({ where: { code: cleanCode } });
-    const targetPlan = license?.plan || "LTD";
+    const targetPlan = existing.plan || "LTD";
+    const dataToUpdate: any = {
+      plan: targetPlan,
+      planStatus: "ACTIVE",
+    };
+
+    // If key has validDays (represented by expiresAt logic here from admin panel, but wait - admin panel created the key with expiresAt. So if redeemed, user's planExpiresAt becomes that exact date).
+    if (existing.expiresAt) {
+      dataToUpdate.planExpiresAt = existing.expiresAt;
+    }
 
     // Upgrade user to key's plan
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: {
-        plan: targetPlan,
-        planStatus: "ACTIVE",
-      },
+      data: dataToUpdate,
     });
 
     // Create payment transaction audit

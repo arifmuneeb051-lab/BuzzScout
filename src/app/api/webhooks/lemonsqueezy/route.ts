@@ -75,19 +75,34 @@ export async function POST(req: Request) {
       });
 
       const amountTotal = (attributes.total || attributes.subtotal || 0) / 100;
+      const finalAmount = amountTotal > 0 ? amountTotal : (targetPlan === "LTD" ? 49 : 9);
 
-      await prisma.paymentTransaction.create({
-        data: {
+      // Prevent duplicate transactions for the same payment by checking recent transactions
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+      const recentTx = await prisma.paymentTransaction.findFirst({
+        where: {
           userId,
-          userEmail: userEmail || `user_${userId.slice(0, 8)}@buzzscout.io`,
-          amount: amountTotal > 0 ? amountTotal : targetPlan === "LTD" ? 49 : 9,
-          currency: (attributes.currency || "usd").toLowerCase(),
+          amount: finalAmount,
           plan: targetPlan,
-          status: "COMPLETED",
-          paymentMethod: "LEMON_SQUEEZY",
-          cardLast4: "LEMON",
+          createdAt: { gte: twoMinutesAgo },
         },
       });
+
+      if (!recentTx) {
+        await prisma.paymentTransaction.create({
+          data: {
+            userId,
+            userEmail: userEmail || `user_${userId.slice(0, 8)}@buzzscout.io`,
+            amount: finalAmount,
+            currency: (attributes.currency || "usd").toLowerCase(),
+            plan: targetPlan,
+            status: "COMPLETED",
+            paymentMethod: "LEMON_SQUEEZY",
+            cardLast4: "LEMON",
+            stripeSessionId: String(payload.data?.id || ""),
+          },
+        });
+      }
 
       console.log(`[LemonSqueezy Webhook] Successfully activated ${targetPlan} for user ${userId}`);
     }

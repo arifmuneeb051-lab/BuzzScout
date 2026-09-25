@@ -223,16 +223,18 @@ export default function DashboardLayout({
               <span className="text-slate-400 text-[10px] font-medium">Plan Tier:</span>
               <span
                 className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                  user?.plan === "LTD"
+                  !isPlanActive
+                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                    : user?.plan === "LTD"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : user?.plan === "AGENCY"
                     ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                     : user?.plan === "PRO"
                     ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                    : "bg-slate-500/20 text-slate-300 border border-slate-500/30"
                 }`}
               >
-                {user?.plan === "LTD" ? "LTD Pass" : user?.plan === "AGENCY" ? "Agency" : user?.plan === "PRO" ? "Pro Tier" : "Pending Payment"}
+                {!isPlanActive ? "UNPAID" : user?.plan === "LTD" ? "LTD Pass" : user?.plan === "AGENCY" ? "Agency" : user?.plan === "PRO" ? "Pro Tier" : "Free"}
               </span>
             </div>
           </div>

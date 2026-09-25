@@ -112,8 +112,8 @@ export default function AdminLicensesPage() {
               onChange={(e) => setSelectedPlan(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
             >
-              <option value="LTD">LTD (Lifetime Founder Pass - $25 Value)</option>
-              <option value="PRO">PRO (Pro Monthly Pass - $5/mo Value)</option>
+              <option value="LTD">LTD (Lifetime Founder Pass - $49 Value)</option>
+              <option value="PRO">PRO (Pro Monthly Pass - $9/mo Value)</option>
             </select>
           </div>
 

@@ -109,8 +109,8 @@ export default function BillingPage() {
         const config = await resConfig.json();
         setLtdOfferActive(config.ltdOfferActive !== false);
         setPlanPrices({
-          PRO: config.monthlyPrice || 5,
-          LTD: config.ltdPrice || 25
+          PRO: config.monthlyPrice || 9,
+          LTD: config.ltdPrice || 49
         });
       }
     } catch {

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BuzzScout — Real-Time Social Listening & High-Intent Buyer Radar",
   description:
-    "Monitor Reddit & X for high-intent buyer discussions in real-time. Get sub-60s Telegram & Discord alerts with 1-click AI sales pitches. Disruptive $5/mo or $25 Lifetime Deal.",
+    "Monitor Reddit & X for high-intent buyer discussions in real-time. Get sub-60s Telegram & Discord alerts with 1-click AI sales pitches. Disruptive $9/mo or $49 Lifetime Deal.",
   keywords: [
     "BuzzScout",
     "social listening",

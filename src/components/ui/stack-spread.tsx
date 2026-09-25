@@ -76,7 +76,7 @@ const STACK_ITEMS: StackItem[] = [
     badge: "3 Conversion Tones Ready",
     badgeColor: "bg-indigo-500/10 text-indigo-500 border-indigo-500/30",
     title: "Helpful & Founder Story Angle Generated",
-    body: "\"Hey! Built BuzzScout to solve this exact pricing gouging. Flat $5/mo or $25 lifetime pass. Zero enterprise bloat, instant alerts.\"",
+    body: "\"Hey! Built BuzzScout to solve this exact pricing gouging. Flat $9/mo or $49 lifetime pass. Zero enterprise bloat, instant alerts.\"",
     metric: "Under 30s Response Time",
     rotation: -2,
     spreadX: -120,

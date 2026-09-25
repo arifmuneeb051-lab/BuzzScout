@@ -182,8 +182,8 @@ export default function AdminUsersPage() {
             onChange={(e) => setGrantPlan(e.target.value)}
             className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
           >
-            <option value="PRO">PRO ($5/mo Monthly)</option>
-            <option value="LTD">LTD ($25 Lifetime Pass)</option>
+            <option value="PRO">PRO ($9/mo Monthly)</option>
+            <option value="LTD">LTD ($49 Lifetime Pass)</option>
             <option value="INACTIVE">INACTIVE (Revoke Access)</option>
           </select>
           <button
@@ -242,8 +242,8 @@ export default function AdminUsersPage() {
                           className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                         >
                           <option value="INACTIVE">INACTIVE (Pending Payment)</option>
-                          <option value="PRO">PRO ($5/mo)</option>
-                          <option value="LTD">LTD ($25 Lifetime)</option>
+                          <option value="PRO">PRO ($9/mo)</option>
+                          <option value="LTD">LTD ($49 Lifetime)</option>
                         </select>
                       </td>
 

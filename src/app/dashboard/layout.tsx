@@ -94,6 +94,9 @@ export default function DashboardLayout({
                 router.replace("/dashboard/billing?notice=subscription_required&forbidden=1");
               }
             } else {
+              if (pathname === "/dashboard/billing" && typeof window !== "undefined" && window.location.search.includes("notice=subscription_required")) {
+                router.replace("/dashboard");
+              }
               setPlanForbidden(false);
             }
           }

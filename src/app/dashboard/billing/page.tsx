@@ -132,7 +132,7 @@ export default function BillingPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("notice") === "subscription_required" || params.get("forbidden") === "1") {
         setSubscriptionNotice(
-          "Error 403 (Forbidden): Active Plan Required. Access to dashboard services is restricted to active plan members only. Please subscribe below to unlock your dashboard."
+          "Active Plan Required. Access to dashboard services is restricted to active plan members only. Please subscribe below to unlock your dashboard."
         );
       }
 

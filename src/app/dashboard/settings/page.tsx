@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, Settings as SettingsIcon, Save, AlertTriangle, CheckCircle2, MessageSquare, Zap, AlertCircle } from "lucide-react";
+import { User, Settings as SettingsIcon, Save, AlertTriangle, CheckCircle2, MessageSquare, Zap, AlertCircle, Trash2, ShieldAlert, X } from "lucide-react";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
@@ -28,6 +28,31 @@ export default function SettingsPage() {
   // Telegram State
   const [telegramChatId, setTelegramChatId] = useState("");
   const [telegramActive, setTelegramActive] = useState(false);
+
+  // Account Deletion State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError('Please type "DELETE" exactly to confirm account deletion.');
+      return;
+    }
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/auth/me", { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete account");
+      window.location.href = "/login?notice=account_deleted";
+    } catch (err: any) {
+      setDeleteError(err.message || "Failed to delete account");
+      setDeleteLoading(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -459,6 +484,47 @@ export default function SettingsPage() {
         </form>
       </div>
 
+      {/* Danger Zone: GDPR Privacy & Data Deletion */}
+      {user?.role !== "ADMIN" && (
+        <div className="max-w-3xl pt-6">
+          <div className="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-rose-500" />
+                  Privacy & Data Control (Danger Zone)
+                </h3>
+                <p className="text-xs text-slate-400 max-w-xl">
+                  Permanently erase your account, tracked keywords, detected leads, and alert channels.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); setDeleteError(null); }}
+                className="px-5 py-2.5 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0c1220] border border-rose-900/50 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <button onClick={() => setShowDeleteModal(false)} className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors"><X className="w-5 h-5" /></button>
+            <div className="space-y-2"><div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400"><ShieldAlert className="w-5 h-5" /></div><h3 className="text-lg font-extrabold text-white">Permanently Delete Account?</h3><p className="text-xs text-slate-400 leading-relaxed">This action is <span className="text-rose-400 font-bold">irreversible</span>. Your data will be immediately purged.</p></div>
+            {deleteError && <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" /><span>{deleteError}</span></div>}
+            <form onSubmit={handleDeleteAccount} className="space-y-4">
+              <div><label className="block text-xs font-semibold text-slate-300 mb-1">Type <span className="font-mono text-rose-400 font-bold">DELETE</span> to confirm:</label><input type="text" required value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-rose-500" /></div>
+              <div className="flex gap-3 pt-2"><button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors">Cancel</button><button type="submit" disabled={deleteLoading || deleteConfirmText !== "DELETE"} className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-2">{deleteLoading ? "Wiping Data..." : "Delete Permanently"}</button></div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

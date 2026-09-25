@@ -35,6 +35,7 @@ interface Transaction {
 export default function BillingPage() {
   const [userPlan, setUserPlan] = useState<string>("INACTIVE");
   const [userPlanStatus, setUserPlanStatus] = useState<string>("INACTIVE");
+  const [userRole, setUserRole] = useState<string>("USER");
   const [userEmail, setUserEmail] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [subscriptionNotice, setSubscriptionNotice] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export default function BillingPage() {
         setUserPlan(dataUser.user.plan);
         setUserPlanStatus(dataUser.user.planStatus);
         setUserEmail(dataUser.user.email);
+        setUserRole(dataUser.user.role);
       }
 
       const dataTx = await resTx.json();
@@ -503,27 +505,29 @@ export default function BillingPage() {
       </div>
 
       {/* Danger Zone: GDPR Privacy & Data Deletion */}
-      <div className="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <Trash2 className="w-4 h-4 text-rose-500" />
-              Privacy & Data Control (Danger Zone)
-            </h3>
-            <p className="text-xs text-slate-400 max-w-xl">
-              Permanently erase your account, tracked keywords, detected leads, and alert channels.
-            </p>
+      {userRole !== "ADMIN" && (
+        <div className="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/40 space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Trash2 className="w-4 h-4 text-rose-500" />
+                Privacy & Data Control (Danger Zone)
+              </h3>
+              <p className="text-xs text-slate-400 max-w-xl">
+                Permanently erase your account, tracked keywords, detected leads, and alert channels.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); setDeleteError(null); }}
+              className="px-5 py-2.5 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Account
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); setDeleteError(null); }}
-            className="px-5 py-2.5 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete Account
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Checkout Modal */}
       {selectedPlanForUpgrade && (

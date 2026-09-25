@@ -45,6 +45,9 @@ interface SiteConfigData {
   stripeMonthlyLink?: string;
   stripeLtdLink?: string;
   stripeAgencyLink?: string;
+  ltdUsersCount: number;
+  ltdMaxSlots: number;
+  ltdSoldOut: boolean;
 }
 
 interface DemoScenario {

@@ -34,6 +34,7 @@ interface Transaction {
 
 export default function BillingPage() {
   const [userPlan, setUserPlan] = useState<string>("INACTIVE");
+  const [userPlanStatus, setUserPlanStatus] = useState<string>("INACTIVE");
   const [userEmail, setUserEmail] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [subscriptionNotice, setSubscriptionNotice] = useState<string | null>(null);
@@ -100,6 +101,7 @@ export default function BillingPage() {
       const dataUser = await resUser.json();
       if (resUser.ok && dataUser.user) {
         setUserPlan(dataUser.user.plan);
+        setUserPlanStatus(dataUser.user.planStatus);
         setUserEmail(dataUser.user.email);
       }
 
@@ -268,7 +270,9 @@ export default function BillingPage() {
             </span>
             <div className="flex items-center gap-3">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                {userPlan === "LTD" 
+                {userPlanStatus !== "ACTIVE"
+                  ? "Inactive (Unpaid)"
+                  : userPlan === "LTD" 
                   ? "Lifetime Founder Pass" 
                   : userPlan === "PRO" 
                   ? "Pro Monthly" 
@@ -276,14 +280,16 @@ export default function BillingPage() {
               </h2>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  userPlan === "LTD"
+                  userPlanStatus !== "ACTIVE"
+                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                    : userPlan === "LTD"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : userPlan === "PRO"
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                    : "bg-slate-500/20 text-slate-300 border border-slate-500/30"
                 }`}
               >
-                {userPlan === "LTD" ? "Permanent Lifetime" : userPlan === "PRO" ? "Active Subscription" : "Payment Required"}
+                {userPlanStatus !== "ACTIVE" ? "Payment Required" : userPlan === "LTD" ? "Permanent Lifetime" : userPlan === "PRO" ? "Active Subscription" : "Inactive"}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-medium pt-1">
@@ -293,8 +299,8 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Plans Section (Hidden for LTD users entirely) */}
-      {userPlan !== "LTD" && (
+      {/* Plans Section (Hidden for active LTD users entirely) */}
+      {(userPlan !== "LTD" || userPlanStatus !== "ACTIVE") && (
         <div className="space-y-4">
           <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-400" />
@@ -302,8 +308,8 @@ export default function BillingPage() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Pro Plan - Hide if already PRO */}
-            {userPlan !== "PRO" && (
+            {/* Pro Plan - Hide if already active PRO */}
+            {(userPlan !== "PRO" || userPlanStatus !== "ACTIVE") && (
               <div className="p-6 rounded-3xl bg-[#0b101d]/90 border border-slate-800 flex flex-col justify-between space-y-6 hover:border-slate-700 transition-colors">
                 <div className="space-y-4">
                   <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wide">
@@ -342,7 +348,7 @@ export default function BillingPage() {
 
             {/* LTD Plan - Only show if offer is active */}
             {ltdOfferActive && (
-              <div className={`p-6 rounded-3xl ${ltdSoldOut ? 'bg-slate-900 border-2 border-slate-700 opacity-90' : 'bg-gradient-to-b from-[#16233e] to-[#0c1426] border-2 border-indigo-500 shadow-2xl shadow-indigo-600/30'} flex flex-col justify-between space-y-6 relative ${userPlan === "PRO" ? "md:col-span-2 md:max-w-md mx-auto" : ""}`}>
+              <div className={`p-6 rounded-3xl ${ltdSoldOut ? 'bg-slate-900 border-2 border-slate-700 opacity-90' : 'bg-gradient-to-b from-[#16233e] to-[#0c1426] border-2 border-indigo-500 shadow-2xl shadow-indigo-600/30'} flex flex-col justify-between space-y-6 relative ${userPlan === "PRO" && userPlanStatus === "ACTIVE" ? "md:col-span-2 md:max-w-md mx-auto" : ""}`}>
                 <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full ${ltdSoldOut ? 'bg-slate-700 text-slate-300' : 'bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white'} text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap`}>
                   {ltdSoldOut ? "Offer Sold Out" : "Early Bird (Limited Time)"}
                 </span>
@@ -405,8 +411,8 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* Redeem License Key Box - Hidden for LTD users */}
-      {userPlan !== "LTD" && (
+      {/* Redeem License Key Box - Hidden for active LTD users */}
+      {(userPlan !== "LTD" || userPlanStatus !== "ACTIVE") && (
         <div className="p-6 rounded-3xl bg-[#0b101d]/90 border border-slate-800 space-y-4">
           <h3 className="text-base font-extrabold text-white flex items-center gap-2">
             <Key className="w-4 h-4 text-amber-400" />

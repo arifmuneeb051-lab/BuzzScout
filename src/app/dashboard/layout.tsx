@@ -77,17 +77,21 @@ export default function DashboardLayout({
     const checkPlanStatus = async () => {
       try {
         const res = await fetch("/api/auth/plan-guard");
+        const data = await res.json().catch(() => null);
+        
         if (!res.ok) {
           // HTTP 403 Forbidden received
           if (isMounted) {
             setPlanForbidden(true);
+            if (data?.user) {
+              setUser(prev => prev ? { ...prev, plan: data.user.plan, planStatus: data.user.planStatus, role: data.user.role } : null);
+            }
             if (pathname !== "/dashboard/billing") {
               router.replace("/dashboard/billing?notice=subscription_required&forbidden=1");
             }
           }
         } else {
-          const data = await res.json();
-          if (isMounted) {
+          if (isMounted && data) {
             if (!data.active) {
               setPlanForbidden(true);
               if (pathname !== "/dashboard/billing") {
@@ -98,6 +102,7 @@ export default function DashboardLayout({
                 router.replace("/dashboard");
               }
               setPlanForbidden(false);
+              setUser(prev => prev ? { ...prev, plan: data.plan, planStatus: data.planStatus, role: data.role } : null);
             }
           }
         }

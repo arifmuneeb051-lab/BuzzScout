@@ -329,34 +329,8 @@ export default function DashboardLayout({
 
         {/* Content body */}
         <main className="flex-1 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl w-full mx-auto min-w-0 overflow-x-hidden">
-          {/* Continuous Live Plan Guard Error 403 Forbidden Banner */}
-          {(planForbidden || (user && !isPlanActive)) && (
-            <div className="mb-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-rose-950/80 border border-rose-500/50 text-rose-200 flex items-start gap-4 shadow-2xl shadow-rose-950/70">
-              <ShieldAlert className="w-6 h-6 text-rose-400 shrink-0 mt-0.5 animate-pulse" />
-              <div className="flex-1 space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                    <span>Error 403 Forbidden: Active Plan Subscription Required</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono border border-rose-500/30">
-                      Live Heartbeat Active (Every 6s)
-                    </span>
-                  </h4>
-                  {pathname !== "/dashboard/billing" && (
-                    <Link
-                      href="/dashboard/billing?notice=subscription_required&forbidden=1"
-                      className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 px-3.5 py-1.5 rounded-xl transition-all shadow-md"
-                    >
-                      Subscribe Now ($5/mo or $25 LTD)
-                    </Link>
-                  )}
-                </div>
-                <p className="text-xs sm:text-sm text-rose-300/90 leading-relaxed">
-                  Real-time Buyer Radar, high-intent social scrapers, and keyword monitoring are strictly restricted to paying subscribers.
-                  The continuous security guard detected that your account does not have an active plan. Please select a plan below or redeem a lifetime license key to activate your account.
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Continuous Live Plan Guard Error 403 Forbidden Banner UI Removed as requested (Background check still runs) */}
+
           {children}
         </main>
       </div>

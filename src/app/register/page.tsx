@@ -601,7 +601,7 @@ export default function RegisterPage() {
                   <span>
                     {loading
                       ? "Creating Account..."
-                      : `Create Account & Select ${selectedPlan === "LTD" ? "Founder Pass ($25)" : "Pro ($5/mo)"}`}
+                      : `Create Account & Select ${selectedPlan === "LTD" ? "Founder Pass ($49)" : "Pro ($9/mo)"}`}
                   </span>
                   <ArrowRight className="w-4 h-4" />
                 </>

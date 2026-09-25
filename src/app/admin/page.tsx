@@ -192,7 +192,7 @@ export default function AdminOverviewPage() {
             <span className="text-3xl font-extrabold text-white">
               {loading ? "..." : stats?.proUsers || 0}
             </span>
-            <span className="text-xs text-amber-400 font-medium">$5/mo Active</span>
+            <span className="text-xs text-amber-400 font-medium">$9/mo Active</span>
           </div>
           <p className="text-[11px] text-slate-500">
             Monthly Recurring Revenue

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { formatSafeError } from "@/lib/security";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { createCheckoutSession, getStripeInstance } from "@/lib/stripe";
+import { createLemonCheckout } from "@/lib/lemonsqueezy";
 
 function isValidLuhn(cardNumber: string): boolean {
   const digits = cardNumber.replace(/\D/g, "");
@@ -37,50 +37,40 @@ export async function POST(req: Request) {
 
     const config = await prisma.siteConfig.findUnique({ where: { id: "default" } });
     const amount = plan === "PRO" 
-      ? (config?.monthlyPrice || 5) 
-      : plan === "AGENCY" 
-      ? (config?.agencyPrice || 79) 
-      : (config?.ltdPrice || 25);
+      ? (config?.monthlyPrice || 9) 
+      : (config?.ltdPrice || 49);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buzz-scout.vercel.app";
 
-    // 1. If user requested Stripe Checkout
-    if (method === "STRIPE") {
-      const { stripe, paymentLink, monthlyLink, ltdLink, agencyLink } = await getStripeInstance();
-      
-      const targetLink = plan === "PRO" ? monthlyLink : plan === "AGENCY" ? agencyLink : ltdLink;
-      if (targetLink) {
-        return NextResponse.json({ success: true, url: targetLink });
-      }
+    // 1. Process via Lemon Squeezy (Primary Gateway)
+    if (method === "LEMON_SQUEEZY" || method === "STRIPE") {
+      const variantId = plan === "LTD"
+        ? (process.env.LEMON_SQUEEZY_LTD_VARIANT_ID || "2166966")
+        : (process.env.LEMON_SQUEEZY_MONTHLY_VARIANT_ID || "2167022");
 
-      if (paymentLink) {
-        return NextResponse.json({ success: true, url: paymentLink });
-      }
-
-      if (stripe) {
-        const session = await createCheckoutSession({
+      try {
+        const checkoutUrl = await createLemonCheckout({
+          variantId,
           userId: user.id,
           userEmail: user.email,
-          plan,
-          successUrl: `${appUrl}/dashboard/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,
-          cancelUrl: `${appUrl}/dashboard/billing?canceled=true`,
+          userName: user.name || undefined,
+          plan: plan as "PRO" | "LTD",
+          redirectUrl: `${appUrl}/dashboard/billing?status=success`,
         });
 
-        if (session && session.url) {
-          return NextResponse.json({ success: true, url: session.url });
-        }
+        return NextResponse.json({ success: true, url: checkoutUrl });
+      } catch (err: any) {
+        console.error("Lemon Squeezy checkout error:", err);
+        return NextResponse.json(
+          { error: err.message || "Failed to initialize Lemon Squeezy checkout" },
+          { status: 500 }
+        );
       }
-
-      return NextResponse.json(
-        { error: "Stripe payment link is not configured yet. The admin can paste their Stripe Payment Link in Admin Portal, or you can use 'Credit / Debit Card' to upgrade immediately." },
-        { status: 400 }
-      );
     }
 
-    // 2. Direct Credit Card / Debit Card Processing
+    // 2. Direct Mock Credit / Debit Card Processing (For testing)
     const cleanCard = cardNumber ? cardNumber.replace(/[\s-]/g, "") : "";
 
-    // Card security validation
     if (cleanCard) {
       const isRecognizedTestCard = cleanCard === "4242424242424242" || cleanCard === "4000000000000002";
       if (!isRecognizedTestCard) {
@@ -95,16 +85,13 @@ export async function POST(req: Request) {
 
     const cardLast4 = cleanCard ? cleanCard.slice(-4) : "4242";
 
-    // Sanitize cardHolder to prevent XSS / malicious injection
-    const sanitizedHolder = cardHolder ? String(cardHolder).replace(/<[^>]*>/g, "").trim().slice(0, 80) : "Cardholder";
-
     // Update user plan in database
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         plan,
         planStatus: "ACTIVE",
-        trialEndsAt: null, // Removed trial limit upon paid plan
+        trialEndsAt: null,
       },
     });
 
@@ -117,7 +104,7 @@ export async function POST(req: Request) {
         currency: "usd",
         plan,
         status: "COMPLETED",
-        paymentMethod: method === "STRIPE" ? "STRIPE" : "CARD",
+        paymentMethod: "CARD",
         cardLast4,
       },
     });
@@ -127,7 +114,7 @@ export async function POST(req: Request) {
       plan: updatedUser.plan,
       transactionId: transaction.id,
       amount,
-      message: `Payment of $${amount} approved! You have been upgraded to ${plan === "LTD" ? "Lifetime Founder Pass" : plan === "AGENCY" ? "Agency Pass" : "Pro Monthly"}.`,
+      message: `Payment of $${amount} approved! You have been upgraded to ${plan === "LTD" ? "Lifetime Founder Pass" : "Pro Monthly"}.`,
     });
   } catch (err: any) {
     console.error("Checkout processing error:", err);

@@ -40,11 +40,11 @@ export default function BillingPage() {
   
   // Site Config
   const [ltdOfferActive, setLtdOfferActive] = useState<boolean>(true);
-  const [planPrices, setPlanPrices] = useState({ PRO: 5, LTD: 25 });
+  const [planPrices, setPlanPrices] = useState({ PRO: 9, LTD: 49 });
 
   // Checkout Modal State
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<"PRO" | "LTD" | null>(null);
-  const [checkoutMethod, setCheckoutMethod] = useState<"CARD" | "STRIPE">("CARD");
+  const [checkoutMethod, setCheckoutMethod] = useState<"LEMON_SQUEEZY" | "CARD">("LEMON_SQUEEZY");
   const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
   const [cardExp, setCardExp] = useState("12/28");
   const [cardCvc, setCardCvc] = useState("888");
@@ -514,8 +514,8 @@ export default function BillingPage() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-bold">
+              <button type="button" onClick={() => setCheckoutMethod("LEMON_SQUEEZY")} className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${checkoutMethod === "LEMON_SQUEEZY" ? "bg-amber-500 text-slate-950 shadow-md font-extrabold" : "text-slate-400 hover:text-white"}`}><Lock className="w-3.5 h-3.5" /><span>Lemon Squeezy</span></button>
               <button type="button" onClick={() => setCheckoutMethod("CARD")} className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${checkoutMethod === "CARD" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}><CreditCard className="w-3.5 h-3.5" /><span>Card Mock</span></button>
-              <button type="button" onClick={() => setCheckoutMethod("STRIPE")} className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${checkoutMethod === "STRIPE" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"}`}><Lock className="w-3.5 h-3.5" /><span>Stripe Gateway</span></button>
             </div>
             <form onSubmit={handleExecuteCheckout} className="space-y-4">
               {checkoutMethod === "CARD" ? (
@@ -525,9 +525,17 @@ export default function BillingPage() {
                   <div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-semibold text-slate-300 mb-1">Expiry</label><input type="text" required value={cardExp} onChange={(e) => setCardExp(e.target.value)} placeholder="12/28" className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-indigo-500" /></div><div><label className="block text-xs font-semibold text-slate-300 mb-1">CVC</label><input type="password" required maxLength={4} value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} placeholder="888" className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-indigo-500" /></div></div>
                 </>
               ) : (
-                <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 text-xs text-slate-300 space-y-2"><p className="font-semibold text-white">Stripe Hosted Checkout:</p><p className="text-[11px] text-slate-400">You will be securely routed to Stripe's encrypted payment page.</p></div>
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-300 space-y-2">
+                  <p className="font-semibold text-amber-300 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" />
+                    Lemon Squeezy Hosted Checkout:
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    You will be securely routed to Lemon Squeezy to pay via Credit Card, PayPal, or Apple Pay with instant activation.
+                  </p>
+                </div>
               )}
-              <div className="pt-2"><button type="submit" disabled={checkoutLoading} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"><Lock className="w-4 h-4" /><span>{checkoutLoading ? "Processing..." : `Pay $${planPrices[selectedPlanForUpgrade]} & Activate Now`}</span></button></div>
+              <div className="pt-2"><button type="submit" disabled={checkoutLoading} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"><Lock className="w-4 h-4" /><span>{checkoutLoading ? "Preparing Checkout..." : checkoutMethod === "LEMON_SQUEEZY" ? `Proceed to Checkout ($${planPrices[selectedPlanForUpgrade]})` : `Pay $${planPrices[selectedPlanForUpgrade]} & Activate Now`}</span></button></div>
             </form>
           </div>
         </div>

@@ -45,6 +45,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const [ltdMaxSlots, setLtdMaxSlots] = useState(100);
+  const [ltdUsersCount, setLtdUsersCount] = useState(0);
+  const [ltdSoldOut, setLtdSoldOut] = useState(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -53,6 +57,19 @@ export default function RegisterPage() {
         setNoticeMessage("Official Google OAuth requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env. Please register with your Email and Password below, or configure your Google credentials.");
       }
     }
+    
+    // Fetch limits for LTD
+    fetch("/api/site-config")
+      .then(res => res.json())
+      .then(data => {
+        setLtdMaxSlots(data.ltdMaxSlots || 100);
+        setLtdUsersCount(data.ltdUsersCount || 0);
+        if (data.ltdSoldOut) {
+          setLtdSoldOut(true);
+          setSelectedPlan("PRO");
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleGoogleAuth = () => {
@@ -536,7 +553,7 @@ export default function RegisterPage() {
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-bold text-white">Pro Monthly</span>
-                      <span className="text-xs font-extrabold text-indigo-400">$5 / mo</span>
+                      <span className="text-xs font-extrabold text-indigo-400">$9 / mo</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
                       Real-time social radar, instant Telegram &amp; Discord alerts.
@@ -544,22 +561,25 @@ export default function RegisterPage() {
                   </div>
 
                   <div
-                    onClick={() => setSelectedPlan("LTD")}
-                    className={`cursor-pointer p-3.5 rounded-2xl border transition-all relative ${
+                    onClick={() => {
+                      if (!ltdSoldOut) setSelectedPlan("LTD");
+                    }}
+                    className={`p-3.5 rounded-2xl border transition-all relative ${
+                      ltdSoldOut ? "opacity-60 cursor-not-allowed bg-slate-900 border-slate-800" :
                       selectedPlan === "LTD"
-                        ? "bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/20"
-                        : "bg-slate-900/60 border-slate-800 hover:border-slate-700"
+                        ? "cursor-pointer bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/20"
+                        : "cursor-pointer bg-slate-900/60 border-slate-800 hover:border-slate-700"
                     }`}
                   >
-                    <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[9px]">
-                      LIFETIME DEAL
+                    <span className={`absolute -top-2 right-2 px-1.5 py-0.5 rounded-full font-extrabold text-[9px] ${ltdSoldOut ? 'bg-slate-700 text-slate-300' : 'bg-amber-500 text-slate-950'}`}>
+                      {ltdSoldOut ? "SOLD OUT" : "LIFETIME DEAL"}
                     </span>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-bold text-white">Founder Pass</span>
-                      <span className="text-xs font-extrabold text-amber-400">$25 One-time</span>
+                      <span className={`text-xs font-extrabold ${ltdSoldOut ? 'text-slate-400' : 'text-amber-400'}`}>$49 One-time</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Pay once, own forever. Zero recurring subscription.
+                      {ltdSoldOut ? `All ${ltdMaxSlots} founder slots claimed.` : "Pay once, own forever. Zero recurring fees."}
                     </p>
                   </div>
                 </div>

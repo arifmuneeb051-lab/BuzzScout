@@ -40,6 +40,15 @@ export async function POST(req: Request) {
       ? (config?.monthlyPrice || 9) 
       : (config?.ltdPrice || 49);
 
+    if (plan === "LTD") {
+      const ltdUsersCount = await prisma.user.count({
+        where: { plan: "LTD", planStatus: "ACTIVE" }
+      });
+      if (ltdUsersCount >= 100) {
+        return NextResponse.json({ error: "The Early Bird Lifetime Deal is completely sold out. Please select the Pro Monthly plan instead." }, { status: 400 });
+      }
+    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://buzz-scout.vercel.app";
 
     // 1. Process via Lemon Squeezy (Primary Gateway)

@@ -41,6 +41,9 @@ export default function BillingPage() {
   // Site Config
   const [ltdOfferActive, setLtdOfferActive] = useState<boolean>(true);
   const [planPrices, setPlanPrices] = useState({ PRO: 9, LTD: 49 });
+  const [ltdUsersCount, setLtdUsersCount] = useState<number>(0);
+  const [ltdMaxSlots, setLtdMaxSlots] = useState<number>(100);
+  const [ltdSoldOut, setLtdSoldOut] = useState<boolean>(false);
 
   // Checkout Modal State
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<"PRO" | "LTD" | null>(null);
@@ -112,6 +115,9 @@ export default function BillingPage() {
           PRO: config.monthlyPrice || 9,
           LTD: config.ltdPrice || 49
         });
+        setLtdUsersCount(config.ltdUsersCount || 0);
+        setLtdMaxSlots(config.ltdMaxSlots || 100);
+        setLtdSoldOut(config.ltdSoldOut || false);
       }
     } catch {
       console.error("Failed to load billing details");
@@ -336,42 +342,62 @@ export default function BillingPage() {
 
             {/* LTD Plan - Only show if offer is active */}
             {ltdOfferActive && (
-              <div className={`p-6 rounded-3xl bg-gradient-to-b from-[#16233e] to-[#0c1426] border-2 border-indigo-500 shadow-2xl shadow-indigo-600/30 flex flex-col justify-between space-y-6 relative ${userPlan === "PRO" ? "md:col-span-2 md:max-w-md mx-auto" : ""}`}>
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap">
-                  Early Bird (Limited Time)
+              <div className={`p-6 rounded-3xl ${ltdSoldOut ? 'bg-slate-900 border-2 border-slate-700 opacity-90' : 'bg-gradient-to-b from-[#16233e] to-[#0c1426] border-2 border-indigo-500 shadow-2xl shadow-indigo-600/30'} flex flex-col justify-between space-y-6 relative ${userPlan === "PRO" ? "md:col-span-2 md:max-w-md mx-auto" : ""}`}>
+                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full ${ltdSoldOut ? 'bg-slate-700 text-slate-300' : 'bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white'} text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap`}>
+                  {ltdSoldOut ? "Offer Sold Out" : "Early Bird (Limited Time)"}
                 </span>
                 <div className="space-y-4">
-                  <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wide">
-                    One-Time Payment
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-mono font-bold ${ltdSoldOut ? 'text-slate-400' : 'text-amber-400'} uppercase tracking-wide`}>
+                      One-Time Payment
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${ltdSoldOut ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'} flex items-center gap-1`}>
+                      <Zap className="w-3 h-3" />
+                      {ltdSoldOut ? "0 Slots Left" : `${Math.max(0, ltdMaxSlots - ltdUsersCount)} Slots Left`}
+                    </span>
+                  </div>
                   <div>
-                    <h4 className="text-xl font-extrabold text-white">Lifetime Founder Pass</h4>
+                    <h4 className={`text-xl font-extrabold ${ltdSoldOut ? 'text-slate-300' : 'text-white'}`}>Lifetime Founder Pass</h4>
                     <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-                      <span className="text-5xl font-extrabold text-white">${planPrices.LTD}</span>
-                      <span className="text-xs text-indigo-300">one-time payment</span>
+                      <span className={`text-5xl font-extrabold ${ltdSoldOut ? 'text-slate-500' : 'text-white'}`}>${planPrices.LTD}</span>
+                      <span className={`text-xs ${ltdSoldOut ? 'text-slate-500' : 'text-indigo-300'}`}>one-time payment</span>
+                    </div>
+                    {/* Visual Progress Bar */}
+                    <div className="mt-4 space-y-1.5">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                        <span>{ltdUsersCount} Claimed</span>
+                        <span>{ltdMaxSlots} Limit</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 ${ltdSoldOut ? 'bg-rose-500' : 'bg-gradient-to-r from-emerald-500 to-amber-500'}`} 
+                          style={{ width: `${Math.min(100, (ltdUsersCount / ltdMaxSlots) * 100)}%` }} 
+                        />
+                      </div>
                     </div>
                   </div>
-                  <ul className="space-y-2.5 text-xs text-slate-200 font-medium">
+                  <ul className={`space-y-2.5 text-xs ${ltdSoldOut ? 'text-slate-500' : 'text-slate-200'} font-medium`}>
                     <li className="flex items-center gap-2 font-bold">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Check className={`w-4 h-4 shrink-0 ${ltdSoldOut ? 'text-slate-600' : 'text-emerald-400'}`} />
                       <span>Unlimited keywords tracked forever</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Check className={`w-4 h-4 shrink-0 ${ltdSoldOut ? 'text-slate-600' : 'text-emerald-400'}`} />
                       <span>Zero monthly subscription fees forever</span>
                     </li>
-                    <li className="flex items-center gap-2 font-bold text-emerald-400">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <li className={`flex items-center gap-2 font-bold ${ltdSoldOut ? 'text-slate-500' : 'text-emerald-400'}`}>
+                      <Check className={`w-4 h-4 shrink-0 ${ltdSoldOut ? 'text-slate-600' : 'text-emerald-400'}`} />
                       <span>40-Day Money-Back Guarantee</span>
                     </li>
                   </ul>
                 </div>
                 <button
                   onClick={() => handleOpenCheckout("LTD")}
-                  className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-600/40 transition-all flex items-center justify-center gap-1.5"
+                  disabled={ltdSoldOut}
+                  className={`w-full py-3.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 ${ltdSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/40'}`}
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Get Lifetime Access (${planPrices.LTD})</span>
+                  <Zap className={`w-3.5 h-3.5 ${ltdSoldOut ? 'text-slate-500' : 'text-amber-400'}`} />
+                  <span>{ltdSoldOut ? "Sold Out" : `Get Lifetime Access ($${planPrices.LTD})`}</span>
                 </button>
               </div>
             )}

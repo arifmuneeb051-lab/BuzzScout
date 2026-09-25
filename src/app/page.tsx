@@ -152,6 +152,9 @@ export default function LandingPage() {
     stripeMonthlyLink: "",
     stripeLtdLink: "",
     stripeAgencyLink: "",
+    ltdUsersCount: 0,
+    ltdMaxSlots: 100,
+    ltdSoldOut: false,
   });
 
   // Dynamic Profit Calculator state
@@ -179,6 +182,9 @@ export default function LandingPage() {
             stripeMonthlyLink: data.stripeMonthlyLink || "",
             stripeLtdLink: data.stripeLtdLink || "",
             stripeAgencyLink: data.stripeAgencyLink || "",
+            ltdUsersCount: data.ltdUsersCount ?? 0,
+            ltdMaxSlots: data.ltdMaxSlots ?? 100,
+            ltdSoldOut: data.ltdSoldOut ?? false,
           });
         }
       })
@@ -1416,95 +1422,125 @@ export default function LandingPage() {
           {/* Card 2: Lifetime Founder Pass (DUAL THEME LUXURY FLASH CARD) */}
           <div
             className={`relative rounded-3xl p-8 border-2 space-y-6 md:-translate-y-3 flex flex-col justify-between flash-card-glow shadow-2xl transition-all ${
-              theme === "dark"
+              siteConfig.ltdSoldOut
+                ? theme === "dark" ? "bg-slate-900 border-slate-700 opacity-90 grayscale-[0.2]" : "bg-slate-100 border-slate-300 opacity-90 grayscale-[0.2]"
+                : theme === "dark"
                 ? "bg-gradient-to-b from-[#18243e] to-[#0f172a] border-indigo-500 text-white shadow-indigo-600/30"
                 : "bg-gradient-to-b from-white via-indigo-50/50 to-indigo-100/40 border-indigo-600 text-slate-950 shadow-indigo-500/25"
             }`}
           >
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wide shadow-md">
-                <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
-                <span>EARLY BIRD (99 LEFT) • LIFETIME DEAL</span>
+              <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full ${siteConfig.ltdSoldOut ? 'bg-slate-700 text-slate-300' : 'bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 text-white'} text-[11px] font-extrabold uppercase tracking-wide shadow-md`}>
+                <Sparkles className={`w-3.5 h-3.5 ${siteConfig.ltdSoldOut ? 'text-slate-400' : 'text-amber-200 animate-pulse'}`} />
+                <span>{siteConfig.ltdSoldOut ? "OFFER SOLD OUT" : `EARLY BIRD (${Math.max(0, siteConfig.ltdMaxSlots - siteConfig.ltdUsersCount)} LEFT) • LIFETIME DEAL`}</span>
               </div>
               <div>
                 <h4
                   className={`text-xl font-extrabold ${
-                    theme === "dark" ? "text-white" : "text-slate-950"
+                    theme === "dark" ? (siteConfig.ltdSoldOut ? "text-slate-400" : "text-white") : (siteConfig.ltdSoldOut ? "text-slate-600" : "text-slate-950")
                   }`}
                 >
                   Lifetime Founder Pass
                 </h4>
                 <p
                   className={`text-xs mt-1 font-semibold ${
-                    theme === "dark" ? "text-indigo-300" : "text-indigo-800"
+                    theme === "dark" ? (siteConfig.ltdSoldOut ? "text-slate-500" : "text-indigo-300") : (siteConfig.ltdSoldOut ? "text-slate-500" : "text-indigo-800")
                   }`}
                 >
-                  Pay once, monitor leads forever — zero monthly fees
+                  {siteConfig.ltdSoldOut ? `All ${siteConfig.ltdMaxSlots} slots have been claimed.` : "Pay once, monitor leads forever — zero monthly fees"}
                 </p>
                 <div className="mt-4 flex items-baseline gap-2 flex-wrap">
                   <span
                     className={`text-5xl font-extrabold ${
-                      theme === "dark" ? "text-white" : "text-slate-950"
+                      theme === "dark" ? (siteConfig.ltdSoldOut ? "text-slate-500" : "text-white") : (siteConfig.ltdSoldOut ? "text-slate-400" : "text-slate-950")
                     }`}
                   >
                     ${siteConfig.ltdPrice}
                   </span>
-                  <span className="text-base line-through text-slate-400 font-bold">
-                    $180
-                  </span>
+                  {!siteConfig.ltdSoldOut && (
+                    <span className="text-base line-through text-slate-400 font-bold">
+                      $180
+                    </span>
+                  )}
                   <span
                     className={`text-xs font-bold ${
-                      theme === "dark" ? "text-slate-300" : "text-slate-600"
+                      theme === "dark" ? "text-slate-400" : "text-slate-500"
                     }`}
                   >
                     one-time payment
                   </span>
                 </div>
-                <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold">
-                  <span>Regularly $180 · Save over 80%</span>
+                {!siteConfig.ltdSoldOut && (
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold">
+                    <span>Regularly $180 · Save over 80%</span>
+                  </div>
+                )}
+                {/* Visual Progress Bar on Landing Page */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                    <span>{siteConfig.ltdUsersCount} Claimed</span>
+                    <span>{siteConfig.ltdMaxSlots} Limit</span>
+                  </div>
+                  <div className={`h-1.5 w-full ${theme === "dark" ? "bg-slate-800" : "bg-slate-200"} rounded-full overflow-hidden`}>
+                    <div 
+                      className={`h-full rounded-full transition-all duration-1000 ${siteConfig.ltdSoldOut ? 'bg-rose-500' : 'bg-gradient-to-r from-emerald-500 to-amber-500'}`} 
+                      style={{ width: `${Math.min(100, (siteConfig.ltdUsersCount / siteConfig.ltdMaxSlots) * 100)}%` }} 
+                    />
+                  </div>
                 </div>
               </div>
               <ul
                 className={`space-y-3 text-sm font-semibold ${
-                  theme === "dark" ? "text-slate-200" : "text-slate-800"
+                  theme === "dark" ? (siteConfig.ltdSoldOut ? "text-slate-500" : "text-slate-200") : (siteConfig.ltdSoldOut ? "text-slate-400" : "text-slate-800")
                 }`}
               >
                 <li className="flex items-center gap-2 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>Unlimited active keywords tracked</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>Reddit & X (Twitter) real-time scanning</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>Instant Telegram Bot & Discord Webhooks</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>1-Click AI Sales Pitch Drafter (GPT-4o)</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>High-Intent Lead Filter (No spam/jobs)</span>
                 </li>
-                <li className="flex items-center gap-2 font-bold text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <li className={`flex items-center gap-2 font-bold ${siteConfig.ltdSoldOut ? '' : 'text-emerald-400'}`}>
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>40-Day Money-Back Guarantee</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className={`w-4 h-4 shrink-0 ${siteConfig.ltdSoldOut ? 'text-slate-600' : 'text-emerald-500'}`} />
                   <span>All future platform updates & founder perks</span>
                 </li>
               </ul>
             </div>
-            <a
-              href={siteConfig.stripeLtdLink || "/register?plan=LTD"}
-              className="w-full block text-center py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/40 transition-colors"
-            >
-              Claim ${siteConfig.ltdPrice} Lifetime Access &rarr;
-            </a>
+            {siteConfig.ltdSoldOut ? (
+              <button
+                disabled
+                className={`w-full block text-center py-3.5 rounded-xl font-extrabold text-sm transition-all shadow-lg cursor-not-allowed border ${
+                  theme === "dark" ? "bg-slate-800 text-slate-500 border-slate-700" : "bg-slate-300 text-slate-500 border-slate-300"
+                }`}
+              >
+                Sold Out
+              </button>
+            ) : (
+              <a
+                href={siteConfig.stripeLtdLink || "/register?plan=LTD"}
+                className="w-full block text-center py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/40 transition-colors"
+              >
+                Claim ${siteConfig.ltdPrice} Lifetime Access &rarr;
+              </a>
+            )}
           </div>
         </div>
       </section>

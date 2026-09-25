@@ -12,9 +12,17 @@ export async function GET() {
   };
 
   try {
-    const config = await prisma.siteConfig.findUnique({
-      where: { id: "default" },
-    });
+    const [config, ltdUsersCount] = await Promise.all([
+      prisma.siteConfig.findUnique({
+        where: { id: "default" },
+      }),
+      prisma.user.count({
+        where: { plan: "LTD", planStatus: "ACTIVE" }
+      })
+    ]);
+
+    const ltdMaxSlots = 100;
+    const ltdSoldOut = ltdUsersCount >= ltdMaxSlots;
 
     if (!config) {
       return NextResponse.json(
@@ -29,13 +37,22 @@ export async function GET() {
           ltdPrice: 49,
           ltdOfferActive: true,
           agencyPrice: 79,
+          ltdUsersCount,
+          ltdMaxSlots,
+          ltdSoldOut,
         },
         { headers }
       );
     }
 
     const { stripeSecretKey, stripeWebhookSecret, telegramBotToken, ...safeConfig } = config;
-    return NextResponse.json(safeConfig, { headers });
+    return NextResponse.json({
+      ...safeConfig,
+      ltdUsersCount,
+      ltdMaxSlots,
+      ltdSoldOut,
+      // If sold out, we can choose to force it inactive, but we'll let frontend show "Sold Out" UI instead.
+    }, { headers });
   } catch (err: any) {
     return NextResponse.json(
       {
@@ -49,6 +66,9 @@ export async function GET() {
         ltdPrice: 49,
         ltdOfferActive: true,
         agencyPrice: 79,
+        ltdUsersCount: 0,
+        ltdMaxSlots: 100,
+        ltdSoldOut: false,
       },
       { status: 200, headers }
     );
